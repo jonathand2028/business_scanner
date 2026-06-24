@@ -317,6 +317,60 @@ def extract_from_image(file_bytes):
 
 
 # ----------------------------------------------------------------------
+# Built-in sample: a fraudulent invoice for one-click testing
+# ----------------------------------------------------------------------
+
+def build_sample_invoice_bytes():
+    """Create a dummy invoice PDF with a planted contradiction:
+    the page reads 'Invoice Date: Jan 2026' but the hidden metadata says it
+    was created June 2026 and produced by 'Adobe Photoshop'. Returns bytes.
+
+    Requires reportlab (listed in requirements.txt).
+    """
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.lib.units import inch
+    from reportlab.pdfgen import canvas
+    from pypdf import PdfReader, PdfWriter
+
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=LETTER)
+    w, h = LETTER
+    c.setFont("Helvetica-Bold", 22)
+    c.drawString(1 * inch, h - 1 * inch, "INVOICE")
+    c.setFont("Helvetica", 11)
+    c.drawString(1 * inch, h - 1.5 * inch, "Northwind Trading Co.")
+    c.drawString(1 * inch, h - 1.7 * inch, "billing@northwind-example.com")
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(5 * inch, h - 1.5 * inch, "Invoice Date: Jan 2026")
+    c.setFont("Helvetica", 11)
+    c.drawString(5 * inch, h - 1.7 * inch, "Invoice #: INV-2026-0042")
+    c.drawString(1 * inch, h - 2.4 * inch, "Bill To: Acme Logistics LLC")
+    c.drawString(1 * inch, h - 3.0 * inch, "Freight services - Q1 .............. $3,000")
+    c.drawString(1 * inch, h - 3.3 * inch, "Fuel surcharge .................... $450")
+    c.drawString(1 * inch, h - 3.6 * inch, "Handling fee ...................... $550")
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(1 * inch, h - 4.1 * inch, "Total: $4,000")
+    c.showPage()
+    c.save()
+    buf.seek(0)
+
+    reader = PdfReader(buf)
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    writer.add_metadata({
+        "/Title": "Invoice INV-2026-0042",
+        "/Producer": "Adobe Photoshop 25.0",      # anomaly
+        "/Creator": "Adobe Photoshop",            # anomaly
+        "/CreationDate": "D:20260615120000Z",     # June, text says January
+        "/ModDate": "D:20260615120000Z",
+    })
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
+
+
+# ----------------------------------------------------------------------
 # Streamlit UI
 # ----------------------------------------------------------------------
 
@@ -346,6 +400,20 @@ def main():
         st.markdown("---")
         st.caption("Pasting raw text instead? Use the box at the bottom.")
 
+    st.markdown("**No file handy? Test it instantly:**")
+    if st.button("🧪 Try a sample fraudulent invoice"):
+        try:
+            st.session_state["sample_pdf"] = build_sample_invoice_bytes()
+        except Exception as e:
+            st.error(f"Could not build sample: {e}")
+    sample_pdf = st.session_state.get("sample_pdf")
+    if sample_pdf:
+        st.download_button(
+            "Download this sample (test_invoice.pdf)", sample_pdf,
+            file_name="test_invoice.pdf", mime="application/pdf")
+        st.caption("Generated invoice reads 'Jan 2026' but its metadata says "
+                   "June 2026 + Adobe Photoshop. Scanned automatically below.")
+
     uploaded = st.file_uploader(
         "Upload an invoice, receipt, ID, or record (PDF, PNG, JPG)",
         type=["pdf", "png", "jpg", "jpeg"],
@@ -353,8 +421,8 @@ def main():
 
     pasted = st.text_area("...or paste document text directly", height=120)
 
-    if not uploaded and not pasted.strip():
-        st.info("Upload a file or paste some text to scan.")
+    if not uploaded and not pasted.strip() and not sample_pdf:
+        st.info("Upload a file, paste text, or try the sample invoice above.")
         return
 
     approved = vendor_text.splitlines() if vendor_text else None
@@ -370,6 +438,8 @@ def main():
         except Exception as e:
             st.error(f"Could not read the file: {e}")
             return
+    elif sample_pdf:
+        text, metadata = extract_from_pdf(sample_pdf)
     if pasted.strip():
         text = (text + "\n" + pasted).strip()
 

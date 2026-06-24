@@ -119,11 +119,19 @@ Upload an invoice, receipt, ID, or scan (PDF, PNG, JPG). Optionally paste an
 approved-vendor list in the sidebar. The app reports a risk score with the
 specific reason behind every flag.
 
-### Generate a test invoice
+### Fastest test: the in-app sample button
 
-`create_test_invoice.py` builds a dummy PDF invoice with a planted
-contradiction: the page reads "Invoice Date: Jan 2026" but the hidden
-metadata says it was created in June 2026 and produced by "Adobe Photoshop".
+The app has a **"Try a sample fraudulent invoice"** button. Click it and the
+app builds a dummy invoice on the fly (page reads "Jan 2026"; metadata says
+June 2026 + Adobe Photoshop), scans it automatically (expect HIGH risk), and
+lets you download it. No file hunting required.
+
+### Generate a test invoice from the command line
+
+`create_test_invoice.py` does the same thing as a standalone script: it builds
+a dummy PDF invoice with a planted contradiction: the page reads "Invoice
+Date: Jan 2026" but the hidden metadata says it was created in June 2026 and
+produced by "Adobe Photoshop".
 
 ```bash
 pip install reportlab pypdf
