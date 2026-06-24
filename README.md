@@ -104,3 +104,45 @@ How I handle it: every result comes with a confidence score and the specific evi
 OCR and file-data reading can fail on blurry scans or files that have had their hidden data stripped out.
 
 How I handle it: treat weak extraction as its own warning sign (a file with its hidden data wiped is itself suspicious), fall back to AWS Textract for hard scans, and always show how confident the extraction was so an analyst knows how much to trust the result.
+
+---
+
+## Running this MVP
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Then open the local URL Streamlit prints (usually http://localhost:8501).
+Upload an invoice, receipt, ID, or scan (PDF, PNG, JPG). Optionally paste an
+approved-vendor list in the sidebar. The app reports a risk score with the
+specific reason behind every flag.
+
+### Generate a test invoice
+
+`create_test_invoice.py` builds a dummy PDF invoice with a planted
+contradiction: the page reads "Invoice Date: Jan 2026" but the hidden
+metadata says it was created in June 2026 and produced by "Adobe Photoshop".
+
+```bash
+pip install reportlab pypdf
+python create_test_invoice.py        # writes test_invoice.pdf
+```
+
+Upload `test_invoice.pdf` to the app (keep "untouched original" checked) and
+it should flag HIGH risk on both the date mismatch and the editing software.
+
+## Deploy to a dev website (Streamlit Community Cloud)
+
+1. Push this repo to GitHub.
+2. Go to https://share.streamlit.io and sign in with GitHub.
+3. Click "New app", pick this repo, branch `main`, main file `app.py`.
+4. Click "Deploy". The app builds from `requirements.txt` and gets a public
+   `*.streamlit.app` URL you can share.
+
+## Scope note
+
+This MVP does the metadata-and-date cross-check (the strong, self-contained
+part). Image OCR (reading text off the pixels with Tesseract or AWS Textract)
+is the next planned step; today, image scanning relies on embedded metadata.
