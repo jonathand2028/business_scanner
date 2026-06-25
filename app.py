@@ -342,6 +342,11 @@ _LINE_ITEMS = [
 ]
 _MON_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_STREETS = ["Commerce St", "Industrial Ave", "Harbor Blvd", "Madison Ave",
+            "Logistics Pkwy", "Warehouse Rd", "Market St", "Dockside Way"]
+_CITIES = ["Chicago, IL 60601", "Newark, NJ 07102", "Houston, TX 77002",
+           "Atlanta, GA 30303", "Columbus, OH 43215", "Reno, NV 89501",
+           "Tampa, FL 33602", "Memphis, TN 38103"]
 
 
 def build_sample_invoice_bytes(kind="fraud"):
@@ -365,33 +370,103 @@ def build_sample_invoice_bytes(kind="fraud"):
     printed_month_idx = _random.randint(0, 7)          # Jan..Aug
     printed_date = f"{_MON_ABBR[printed_month_idx]} 2026"
 
-    items, total = [], 0
-    for _ in range(_random.randint(2, 4)):
-        amt = _random.randint(1, 40) * 100
-        total += amt
-        items.append((_random.choice(_LINE_ITEMS), f"${amt:,}"))
+    # build itemized lines: (description, qty, unit_price, amount)
+    items, subtotal = [], 0.0
+    for _ in range(_random.randint(4, 7)):
+        qty = _random.randint(1, 12)
+        unit = _random.choice([45, 75, 120, 180, 250, 300, 450, 600, 90, 150])
+        amt = qty * unit
+        subtotal += amt
+        items.append((_random.choice(_LINE_ITEMS), qty, unit, amt))
+    tax = round(subtotal * 0.08, 2)
+    total = subtotal + tax
 
-    # draw the visible page
+    vslug = vendor.split()[0].lower()
+    street = f"{_random.randint(100, 9899)} {_random.choice(_STREETS)}"
+    city = _random.choice(_CITIES)
+    po_no = f"PO-{_random.randint(10000, 99999)}"
+    due_idx = min(printed_month_idx + 1, 11)
+    due_date = f"{_MON_ABBR[due_idx]} 2026"
+
+    # ---- draw the visible page ----
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=LETTER)
     w, h = LETTER
-    c.setFont("Helvetica-Bold", 22)
-    c.drawString(1 * inch, h - 1 * inch, "INVOICE")
-    c.setFont("Helvetica", 11)
-    c.drawString(1 * inch, h - 1.5 * inch, vendor)
-    c.drawString(1 * inch, h - 1.7 * inch, "billing@" +
-                 vendor.split()[0].lower() + "-example.com")
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(5 * inch, h - 1.5 * inch, f"Invoice Date: {printed_date}")
-    c.setFont("Helvetica", 11)
-    c.drawString(5 * inch, h - 1.7 * inch, f"Invoice #: {inv_no}")
-    c.drawString(1 * inch, h - 2.4 * inch, f"Bill To: {bill_to}")
-    y = h - 3.0 * inch
-    for desc, amt in items:
-        c.drawString(1 * inch, y, f"{desc} {'.' * 30} {amt}")
-        y -= 0.3 * inch
+    left, right = 0.9 * inch, w - 0.9 * inch
+
+    # header
+    c.setFont("Helvetica-Bold", 26)
+    c.drawString(left, h - 0.95 * inch, "INVOICE")
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(1 * inch, y - 0.1 * inch, f"Total: ${total:,}")
+    c.drawString(left, h - 1.4 * inch, vendor)
+    c.setFont("Helvetica", 9.5)
+    c.drawString(left, h - 1.6 * inch, street)
+    c.drawString(left, h - 1.76 * inch, city)
+    c.drawString(left, h - 1.92 * inch, f"billing@{vslug}-example.com")
+    c.drawString(left, h - 2.08 * inch, f"(555) {_random.randint(200,999)}-{_random.randint(1000,9999)}")
+
+    # invoice meta box (right side)
+    mx = 4.7 * inch
+    c.setFont("Helvetica-Bold", 9.5)
+    c.drawString(mx, h - 1.4 * inch, "Invoice #:")
+    c.drawString(mx, h - 1.6 * inch, "Invoice Date:")
+    c.drawString(mx, h - 1.8 * inch, "Due Date:")
+    c.drawString(mx, h - 2.0 * inch, "PO Number:")
+    c.drawString(mx, h - 2.2 * inch, "Terms:")
+    c.setFont("Helvetica", 9.5)
+    c.drawString(mx + 1.1 * inch, h - 1.4 * inch, inv_no)
+    c.drawString(mx + 1.1 * inch, h - 1.6 * inch, printed_date)
+    c.drawString(mx + 1.1 * inch, h - 1.8 * inch, due_date)
+    c.drawString(mx + 1.1 * inch, h - 2.0 * inch, po_no)
+    c.drawString(mx + 1.1 * inch, h - 2.2 * inch, "Net 30")
+
+    # bill-to
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(left, h - 2.7 * inch, "BILL TO")
+    c.setFont("Helvetica", 9.5)
+    c.drawString(left, h - 2.9 * inch, bill_to)
+    c.drawString(left, h - 3.06 * inch,
+                 f"{_random.randint(100,9899)} {_random.choice(_STREETS)}")
+    c.drawString(left, h - 3.22 * inch, _random.choice(_CITIES))
+
+    # table header
+    ty = h - 3.8 * inch
+    c.setFillGray(0.92)
+    c.rect(left, ty - 4, right - left, 0.26 * inch, fill=1, stroke=0)
+    c.setFillGray(0)
+    c.setFont("Helvetica-Bold", 9.5)
+    c.drawString(left + 4, ty, "Description")
+    c.drawRightString(right - 2.7 * inch, ty, "Qty")
+    c.drawRightString(right - 1.4 * inch, ty, "Unit Price")
+    c.drawRightString(right - 4, ty, "Amount")
+
+    # table rows
+    c.setFont("Helvetica", 9.5)
+    ry = ty - 0.3 * inch
+    for desc, qty, unit, amt in items:
+        c.drawString(left + 4, ry, desc)
+        c.drawRightString(right - 2.7 * inch, ry, str(qty))
+        c.drawRightString(right - 1.4 * inch, ry, f"${unit:,.2f}")
+        c.drawRightString(right - 4, ry, f"${amt:,.2f}")
+        c.setStrokeGray(0.85)
+        c.line(left, ry - 5, right, ry - 5)
+        ry -= 0.28 * inch
+
+    # totals
+    c.setFont("Helvetica", 10)
+    c.drawRightString(right - 1.4 * inch, ry - 6, "Subtotal:")
+    c.drawRightString(right - 4, ry - 6, f"${subtotal:,.2f}")
+    c.drawRightString(right - 1.4 * inch, ry - 0.22 * inch - 6, "Tax (8%):")
+    c.drawRightString(right - 4, ry - 0.22 * inch - 6, f"${tax:,.2f}")
+    c.setFont("Helvetica-Bold", 11)
+    c.drawRightString(right - 1.4 * inch, ry - 0.5 * inch - 6, "TOTAL:")
+    c.drawRightString(right - 4, ry - 0.5 * inch - 6, f"${total:,.2f}")
+
+    # footer
+    c.setFont("Helvetica-Oblique", 8.5)
+    c.drawString(left, 1.0 * inch,
+                 "Payment due within 30 days. Make checks payable to "
+                 f"{vendor}. Thank you for your business.")
     c.showPage()
     c.save()
     buf.seek(0)
