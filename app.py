@@ -317,14 +317,41 @@ def extract_from_image(file_bytes):
 
 
 # ----------------------------------------------------------------------
-# Built-in sample: a fraudulent invoice for one-click testing
+# Built-in sample generator: random clean OR fraudulent invoices
 # ----------------------------------------------------------------------
 
-def build_sample_invoice_bytes():
-    """Create a dummy invoice PDF with a planted contradiction:
-    the page reads 'Invoice Date: Jan 2026' but the hidden metadata says it
-    was created June 2026 and produced by 'Adobe Photoshop'. Returns bytes.
+import random as _random
 
+_VENDORS = [
+    "Northwind Trading Co.", "Globex Logistics", "Initech Supplies",
+    "Umbrella Freight", "Stark Materials", "Wayne Hauling",
+    "Soylent Foods Co.", "Hooli Hardware", "Vandelay Imports",
+]
+_BILL_TO = [
+    "Acme Logistics LLC", "Pied Piper Inc.", "Wonka Distribution",
+    "Cyberdyne Systems", "Gekko & Co.", "Bluth Company",
+]
+_LEGIT_PRODUCERS = [
+    "QuickBooks 2026", "Xero Invoicing", "FreshBooks", "SAP Invoicing",
+    "Microsoft Word", "Zoho Invoice",
+]
+_EDITORS = ["Adobe Photoshop 25.0", "GIMP 2.10", "Adobe Illustrator", "Canva"]
+_LINE_ITEMS = [
+    "Freight services", "Fuel surcharge", "Handling fee", "Pallet rental",
+    "Customs brokerage", "Warehousing", "Last-mile delivery", "Insurance",
+]
+_MON_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def build_sample_invoice_bytes(kind="fraud"):
+    """Generate a randomized dummy invoice PDF for testing.
+
+    kind="fraud"  -> plant at least one contradiction (date mismatch and/or
+                     an image-editor producer tag).
+    kind="clean"  -> metadata agrees with the page and uses billing software.
+
+    Returns (pdf_bytes, info) where info = {"label", "planted": [...]}.
     Requires reportlab (listed in requirements.txt).
     """
     from reportlab.lib.pagesizes import LETTER
@@ -332,42 +359,80 @@ def build_sample_invoice_bytes():
     from reportlab.pdfgen import canvas
     from pypdf import PdfReader, PdfWriter
 
+    vendor = _random.choice(_VENDORS)
+    bill_to = _random.choice(_BILL_TO)
+    inv_no = f"INV-2026-{_random.randint(1000, 9999)}"
+    printed_month_idx = _random.randint(0, 7)          # Jan..Aug
+    printed_date = f"{_MON_ABBR[printed_month_idx]} 2026"
+
+    items, total = [], 0
+    for _ in range(_random.randint(2, 4)):
+        amt = _random.randint(1, 40) * 100
+        total += amt
+        items.append((_random.choice(_LINE_ITEMS), f"${amt:,}"))
+
+    # draw the visible page
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=LETTER)
     w, h = LETTER
     c.setFont("Helvetica-Bold", 22)
     c.drawString(1 * inch, h - 1 * inch, "INVOICE")
     c.setFont("Helvetica", 11)
-    c.drawString(1 * inch, h - 1.5 * inch, "Northwind Trading Co.")
-    c.drawString(1 * inch, h - 1.7 * inch, "billing@northwind-example.com")
+    c.drawString(1 * inch, h - 1.5 * inch, vendor)
+    c.drawString(1 * inch, h - 1.7 * inch, "billing@" +
+                 vendor.split()[0].lower() + "-example.com")
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(5 * inch, h - 1.5 * inch, "Invoice Date: Jan 2026")
+    c.drawString(5 * inch, h - 1.5 * inch, f"Invoice Date: {printed_date}")
     c.setFont("Helvetica", 11)
-    c.drawString(5 * inch, h - 1.7 * inch, "Invoice #: INV-2026-0042")
-    c.drawString(1 * inch, h - 2.4 * inch, "Bill To: Acme Logistics LLC")
-    c.drawString(1 * inch, h - 3.0 * inch, "Freight services - Q1 .............. $3,000")
-    c.drawString(1 * inch, h - 3.3 * inch, "Fuel surcharge .................... $450")
-    c.drawString(1 * inch, h - 3.6 * inch, "Handling fee ...................... $550")
+    c.drawString(5 * inch, h - 1.7 * inch, f"Invoice #: {inv_no}")
+    c.drawString(1 * inch, h - 2.4 * inch, f"Bill To: {bill_to}")
+    y = h - 3.0 * inch
+    for desc, amt in items:
+        c.drawString(1 * inch, y, f"{desc} {'.' * 30} {amt}")
+        y -= 0.3 * inch
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(1 * inch, h - 4.1 * inch, "Total: $4,000")
+    c.drawString(1 * inch, y - 0.1 * inch, f"Total: ${total:,}")
     c.showPage()
     c.save()
     buf.seek(0)
+
+    # decide metadata
+    planted = []
+    if kind == "fraud":
+        choices = _random.choice([["date"], ["software"], ["date", "software"]])
+        if "date" in choices:
+            # creation 2-6 months after the printed date -> clear mismatch
+            cm = min(printed_month_idx + _random.randint(2, 6), 11) + 1
+            creation = f"D:2026{cm:02d}15120000Z"
+            planted.append(f"creation date 2026-{cm:02d} vs printed {printed_date}")
+        else:
+            creation = f"D:2026{printed_month_idx + 1:02d}10120000Z"
+        if "software" in choices:
+            producer = _random.choice(_EDITORS)
+            planted.append(f"producer '{producer}'")
+        else:
+            producer = _random.choice(_LEGIT_PRODUCERS)
+        label = "fraudulent"
+    else:
+        creation = f"D:2026{printed_month_idx + 1:02d}{_random.randint(1, 9):02d}120000Z"
+        producer = _random.choice(_LEGIT_PRODUCERS)
+        label = "clean"
 
     reader = PdfReader(buf)
     writer = PdfWriter()
     for page in reader.pages:
         writer.add_page(page)
     writer.add_metadata({
-        "/Title": "Invoice INV-2026-0042",
-        "/Producer": "Adobe Photoshop 25.0",      # anomaly
-        "/Creator": "Adobe Photoshop",            # anomaly
-        "/CreationDate": "D:20260615120000Z",     # June, text says January
-        "/ModDate": "D:20260615120000Z",
+        "/Title": f"Invoice {inv_no}",
+        "/Author": "billing@" + vendor.split()[0].lower() + "-example.com",
+        "/Producer": producer,
+        "/Creator": producer,
+        "/CreationDate": creation,
+        "/ModDate": creation,
     })
     out = io.BytesIO()
     writer.write(out)
-    return out.getvalue()
+    return out.getvalue(), {"label": label, "planted": planted}
 
 
 # ----------------------------------------------------------------------
@@ -400,19 +465,36 @@ def main():
         st.markdown("---")
         st.caption("Pasting raw text instead? Use the box at the bottom.")
 
-    st.markdown("**No file handy? Test it instantly:**")
-    if st.button("🧪 Try a sample fraudulent invoice"):
+    st.markdown("**No file handy? Generate a random test invoice:**")
+    sc1, sc2 = st.columns([2, 1])
+    kind_label = sc1.selectbox(
+        "Sample type", ["Fraudulent", "Clean", "Surprise me"],
+        label_visibility="collapsed")
+    if sc2.button("🧪 Generate & scan"):
+        kind = {"Fraudulent": "fraud", "Clean": "clean"}.get(
+            kind_label, _random.choice(["fraud", "clean"]))
         try:
-            st.session_state["sample_pdf"] = build_sample_invoice_bytes()
+            pdf_bytes, info = build_sample_invoice_bytes(kind)
+            st.session_state["sample_pdf"] = pdf_bytes
+            st.session_state["sample_info"] = info
         except Exception as e:
             st.error(f"Could not build sample: {e}")
+
     sample_pdf = st.session_state.get("sample_pdf")
     if sample_pdf:
+        info = st.session_state.get("sample_info", {})
+        truth = info.get("label", "unknown")
         st.download_button(
             "Download this sample (test_invoice.pdf)", sample_pdf,
             file_name="test_invoice.pdf", mime="application/pdf")
-        st.caption("Generated invoice reads 'Jan 2026' but its metadata says "
-                   "June 2026 + Adobe Photoshop. Scanned automatically below.")
+        if truth == "fraudulent":
+            st.caption("Planted (this invoice IS fraudulent): "
+                       + "; ".join(info.get("planted", [])) +
+                       ". The scan below should flag it (MEDIUM for one "
+                       "anomaly, HIGH for two).")
+        elif truth == "clean":
+            st.caption("This invoice is genuine: metadata agrees with the page "
+                       "and uses billing software. The scan below should read LOW.")
 
     uploaded = st.file_uploader(
         "Upload an invoice, receipt, ID, or record (PDF, PNG, JPG)",

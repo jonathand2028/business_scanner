@@ -130,5 +130,20 @@ def create_invoice(out_path="test_invoice.pdf"):
 
 
 if __name__ == "__main__":
-    out = sys.argv[1] if len(sys.argv) > 1 else "test_invoice.pdf"
-    create_invoice(out)
+    # Optional: reuse the app's randomized generator if available so the CLI
+    # and the in-app button produce the same variety. Falls back to the fixed
+    # invoice above if the app module can't be imported.
+    args = [a for a in sys.argv[1:]]
+    want_clean = "--clean" in args
+    paths = [a for a in args if not a.startswith("--")]
+    out = paths[0] if paths else "test_invoice.pdf"
+    try:
+        from app import build_sample_invoice_bytes
+        data, info = build_sample_invoice_bytes("clean" if want_clean else "fraud")
+        with open(out, "wb") as f:
+            f.write(data)
+        print(f"Wrote {out}  ({info['label']})")
+        if info["planted"]:
+            print("  planted: " + "; ".join(info["planted"]))
+    except Exception:
+        create_invoice(out)
