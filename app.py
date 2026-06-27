@@ -607,8 +607,10 @@ def main():
     band, summary = risk_band(score)
 
     color = {"HIGH": "red", "MEDIUM": "orange", "LOW": "green"}[band]
-    st.markdown(f"### Risk: :{color}[{band}] ({score}/100)")
-    st.write(summary)
+    mc1, mc2 = st.columns([1, 2])
+    mc1.metric("Risk score", f"{score}/100")
+    mc2.markdown(f"### :{color}[{band}]")
+    mc2.write(summary)
     st.progress(score / 100)
 
     st.subheader("Findings")

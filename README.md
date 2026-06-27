@@ -154,3 +154,14 @@ it should flag HIGH risk on both the date mismatch and the editing software.
 This MVP does the metadata-and-date cross-check (the strong, self-contained
 part). Image OCR (reading text off the pixels with Tesseract or AWS Textract)
 is the next planned step; today, image scanning relies on embedded metadata.
+
+## Tests & CI
+
+```bash
+pip install pytest
+pytest -q
+```
+
+Unit tests live in `test_app.py` and cover the core logic. GitHub Actions
+(`.github/workflows/ci.yml`) runs them automatically on every push and pull
+request, so the repo shows a green check when everything passes.
