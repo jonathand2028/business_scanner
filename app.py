@@ -511,6 +511,37 @@ def build_sample_invoice_bytes(kind="fraud"):
 
 
 # ----------------------------------------------------------------------
+# Theme: custom CSS for a polished, branded look
+# ----------------------------------------------------------------------
+
+THEME_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+html, body, [class*="css"], .stMarkdown, button, input, textarea { font-family: 'Inter', sans-serif !important; }
+.block-container { padding-top: 1.5rem; max-width: 900px; }
+.app-hero {
+  background: linear-gradient(135deg, #1F3C88 0%, #2E75B6 100%);
+  color: #fff; padding: 22px 28px; border-radius: 16px; margin-bottom: 20px;
+  box-shadow: 0 6px 18px rgba(31,60,136,0.25);
+}
+.app-hero h1 { color:#fff !important; margin:0; font-weight:800; font-size:1.6rem; }
+.app-hero p { color:#dce8f7; margin:6px 0 0; font-size:0.95rem; }
+.stButton>button { border-radius:10px; font-weight:600; border:none; }
+.stButton>button[kind="primary"] { background:#2E75B6; }
+div[data-testid="stMetric"] { background:#F2F6FA; padding:14px 16px; border-radius:12px; border:1px solid #d9e6f2; }
+div[data-testid="stExpander"] { border-radius:12px; }
+</style>
+"""
+
+HERO_HTML = """
+<div class="app-hero">
+  <h1>🔎 Cross-Modal Inconsistency Scanner</h1>
+  <p>Catches document fraud by checking whether a file's text, its hidden metadata, and your records all agree.</p>
+</div>
+"""
+
+
+# ----------------------------------------------------------------------
 # Streamlit UI
 # ----------------------------------------------------------------------
 
@@ -519,12 +550,8 @@ def main():
 
     st.set_page_config(page_title="Inconsistency Scanner", page_icon="🔎",
                        layout="centered")
-    st.title("Cross-Modal Data Inconsistency Scanner")
-    st.caption(
-        "Catches fraud by checking whether a file's printed text, its hidden "
-        "metadata, and your business records all agree. It does not guess "
-        "whether AI made the file."
-    )
+    st.markdown(THEME_CSS, unsafe_allow_html=True)
+    st.markdown(HERO_HTML, unsafe_allow_html=True)
 
     with st.sidebar:
         st.header("Business context (optional)")
