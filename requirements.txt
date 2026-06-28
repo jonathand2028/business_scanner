@@ -1,4 +1,5 @@
 streamlit
 pypdf
 Pillow
+pillow-heif
 reportlab

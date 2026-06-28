@@ -287,6 +287,13 @@ def extract_from_image(file_bytes):
     from PIL import Image
     from PIL.ExifTags import TAGS
 
+    # Enable HEIC/HEIF support if pillow-heif is installed (iPhone photos).
+    try:
+        import pillow_heif
+        pillow_heif.register_heif_opener()
+    except Exception:
+        pass
+
     img = Image.open(io.BytesIO(file_bytes))
     exif_raw = {}
     try:
@@ -599,8 +606,10 @@ def main():
                        "and uses billing software. The scan below should read LOW.")
 
     uploaded = st.file_uploader(
-        "Upload an invoice, receipt, ID, or record (PDF, PNG, JPG)",
-        type=["pdf", "png", "jpg", "jpeg"],
+        "Upload an invoice, receipt, ID, or record",
+        type=["pdf", "png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp",
+              "gif", "heic", "heif"],
+        help="PDFs and images (including iPhone HEIC) are supported.",
     )
 
     pasted = st.text_area("...or paste document text directly", height=120)
