@@ -559,6 +559,8 @@ def main():
                        layout="centered")
     st.markdown(THEME_CSS, unsafe_allow_html=True)
     st.markdown(HERO_HTML, unsafe_allow_html=True)
+    st.caption("Upload a document (PDF or image, including iPhone HEIC), or "
+               "click the sample button below to test it instantly.")
 
     with st.sidebar:
         st.header("Business context (optional)")
