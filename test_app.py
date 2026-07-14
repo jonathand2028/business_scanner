@@ -57,6 +57,21 @@ def test_missing_metadata_is_flagged():
     assert any("Hidden file data is missing" in f["title"] for f in findings)
 
 
+def test_future_dated_flag():
+    text = "Invoice Date: December 2026"
+    meta = {"creation_date": "D:20260601000000", "has_metadata": True}
+    findings, score = app.evaluate(text, meta)
+    assert any("Dated after the file was created" in f["title"] for f in findings)
+
+
+def test_find_invoice_number_and_duplicates():
+    assert app.find_invoice_number("Invoice #: INV-2026-0042") == "INV-2026-0042"
+    assert app.find_invoice_number("no number here") is None
+    dups = app.duplicate_invoice_numbers(
+        [("a.pdf", "INV-1"), ("b.pdf", "INV-1"), ("c.pdf", "INV-2")])
+    assert dups == {"INV-1"}
+
+
 def test_check_email_flags_phishing():
     findings, score = app.check_email(app.SAMPLE_PHISHING,
                                       sender="security@paypa1.com")

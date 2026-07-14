@@ -23,6 +23,7 @@ with no Streamlit dependency, so it can be unit-tested on its own.
 
 import re
 import io
+import csv
 from datetime import datetime, timezone
 
 # ----------------------------------------------------------------------
@@ -166,6 +167,24 @@ def evaluate(text, metadata, approved_vendors=None, claims_to_be_original=True):
                 ),
             })
 
+    # 1b. Invoice date is AFTER the file was created (dated in the future).
+    # Use the earliest date (the invoice date) so a later due date does not
+    # trip this, since due dates are legitimately in the future.
+    if doc_dates and meta_create:
+        earliest_printed = min(doc_dates)
+        ahead = (earliest_printed - meta_create).days
+        if ahead > 1:
+            score += 20
+            findings.append({
+                "level": "medium",
+                "title": "Dated after the file was created",
+                "detail": (
+                    f"The document is dated {earliest_printed.date()}, but the "
+                    f"file was created earlier, on {meta_create.date()}. A "
+                    f"future-dated invoice can be a sign of a fabricated record."
+                ),
+            })
+
     # 2. Editing software on a supposed original
     if claims_to_be_original and software_is_editor(software):
         score += 30
@@ -247,6 +266,24 @@ def risk_band(score):
     if score >= 20:
         return "MEDIUM", "Some inconsistencies - worth a human check"
     return "LOW", "No strong inconsistencies found"
+
+
+_INV_RE = re.compile(
+    r'invoice\s*(?:#|no\.?|number)\s*:?\s*([A-Za-z0-9][A-Za-z0-9\-/]{3,})', re.I)
+
+
+def find_invoice_number(text):
+    """Pull an invoice number out of document text, or None."""
+    m = _INV_RE.search(text or "")
+    return m.group(1).strip() if m else None
+
+
+def duplicate_invoice_numbers(pairs):
+    """pairs: list of (filename, invoice_number). Returns the set of numbers
+    that appear on more than one file (a classic double-billing sign)."""
+    from collections import Counter
+    counts = Counter(num for _, num in pairs if num)
+    return {num for num, c in counts.items() if c > 1}
 
 
 # ----------------------------------------------------------------------
@@ -697,10 +734,49 @@ def _document_scan_ui(st):
             st.caption("This invoice is genuine: metadata agrees with the page "
                        "and uses billing software. The scan below should read LOW.")
 
+    IMG_TYPES = ["pdf", "png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp",
+                 "gif", "heic", "heif"]
+
+    with st.expander("📚 Batch scan (several files at once)"):
+        batch = st.file_uploader("Upload multiple documents", type=IMG_TYPES,
+                                 accept_multiple_files=True, key="batch_files")
+        if batch:
+            approved_b = vendor_text.splitlines() if vendor_text else None
+            rows, inv_pairs = [], []
+            for bf in batch:
+                try:
+                    bdata = bf.read()
+                    if bf.name.lower().endswith(".pdf"):
+                        btext, bmeta = extract_from_pdf(bdata)
+                    else:
+                        btext, bmeta = extract_from_image(bdata)
+                except Exception as e:
+                    rows.append({"File": bf.name, "Risk": "ERROR", "Score": 0,
+                                 "Invoice #": "-", "Top issue": str(e)[:40]})
+                    continue
+                bfind, bscore = evaluate(btext, bmeta, approved_vendors=approved_b,
+                                         claims_to_be_original=claims_original)
+                inv = find_invoice_number(btext)
+                inv_pairs.append((bf.name, inv))
+                rows.append({
+                    "File": bf.name, "Risk": risk_band(bscore)[0],
+                    "Score": bscore, "Invoice #": inv or "-",
+                    "Top issue": bfind[0]["title"] if bfind else "none"})
+            dups = duplicate_invoice_numbers(inv_pairs)
+            if dups:
+                st.warning("Duplicate invoice numbers across files (possible "
+                           "double billing): " + ", ".join(sorted(dups)))
+            st.dataframe(rows, use_container_width=True)
+            buf = io.StringIO()
+            writer = csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(rows)
+            st.download_button("Download results (CSV)", buf.getvalue(),
+                               file_name="scan_results.csv", mime="text/csv")
+
+    st.markdown("**Or scan one file in detail:**")
     uploaded = st.file_uploader(
-        "Upload an invoice, receipt, ID, or record",
-        type=["pdf", "png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp",
-              "gif", "heic", "heif"],
+        "Upload an invoice, receipt, ID, or record", type=IMG_TYPES,
         help="PDFs and images (including iPhone HEIC) are supported.",
     )
 
