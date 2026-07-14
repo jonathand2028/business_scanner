@@ -165,3 +165,11 @@ pytest -q
 Unit tests live in `test_app.py` and cover the core logic. GitHub Actions
 (`.github/workflows/ci.yml`) runs them automatically on every push and pull
 request, so the repo shows a green check when everything passes.
+
+## Email check (phishing / scam)
+
+A second tab, "Email check", flags common phishing signals in a pasted email:
+urgent or pressuring language, requests for passwords or payment, links to raw
+IP addresses or shortened URLs, generic greetings, and links whose domain does
+not match the sender. Click "Load a sample phishing email" to try it. It is a
+heuristic aid, not proof; a clean result is not a guarantee.

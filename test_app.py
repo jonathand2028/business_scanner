@@ -57,6 +57,32 @@ def test_missing_metadata_is_flagged():
     assert any("Hidden file data is missing" in f["title"] for f in findings)
 
 
+def test_check_email_flags_phishing():
+    findings, score = app.check_email(app.SAMPLE_PHISHING,
+                                      sender="security@paypa1.com")
+    titles = {f["title"] for f in findings}
+    assert "Asks for credentials or payment" in titles
+    assert "Link points to a raw IP address" in titles
+    assert app.risk_band(score)[0] == "HIGH"
+
+
+def test_check_email_clean_message_scores_low():
+    msg = ("Hi Jonathan, great chatting today. Here are the notes from our "
+           "meeting. Let me know if Tuesday at 2pm works for the follow up. "
+           "Best, Sarah")
+    findings, score = app.check_email(msg)
+    assert score == 0
+    assert app.risk_band(score)[0] == "LOW"
+
+
+def test_check_email_detects_shortener_and_sender_mismatch():
+    msg = "Please review here: https://bit.ly/xyz thanks"
+    findings, score = app.check_email(msg, sender="billing@realcompany.com")
+    titles = {f["title"] for f in findings}
+    assert "Shortened / hidden links" in titles
+    assert "Links do not match the sender" in titles
+
+
 def test_sample_fraud_invoice_flags_and_clean_does_not():
     for _ in range(8):
         data, info = app.build_sample_invoice_bytes("fraud")

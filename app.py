@@ -250,6 +250,102 @@ def risk_band(score):
 
 
 # ----------------------------------------------------------------------
+# Phishing / scam email heuristics  (pure, testable)
+# ----------------------------------------------------------------------
+
+_URL_RE = re.compile(r'https?://[^\s<>"\')]+', re.I)
+_SHORTENERS = ["bit.ly", "tinyurl", "t.co", "goo.gl", "ow.ly", "is.gd",
+               "buff.ly", "rebrand.ly", "cutt.ly"]
+_URGENCY = ["urgent", "immediately", "act now", "final notice", "within 24 hours",
+            "suspended", "verify your account", "confirm your account",
+            "account has been", "limited time", "expire", "last warning",
+            "as soon as possible", "failure to", "avoid suspension"]
+_SENSITIVE = ["password", "log in", "login", "ssn", "social security",
+              "bank account", "routing number", "wire transfer", "gift card",
+              "credit card", "cvv", "one-time code", "verification code",
+              "seed phrase", "update your payment", "confirm your payment"]
+_GENERIC = ["dear customer", "dear user", "dear account holder",
+            "valued customer", "dear sir/madam", "dear member"]
+
+
+def check_email(text, sender=""):
+    """Flag common phishing/scam signals in an email. Returns (findings, score)."""
+    findings, score = [], 0
+    low = (text or "").lower()
+
+    urgency = sorted({w for w in _URGENCY if w in low})
+    if urgency:
+        score += 22
+        findings.append({"level": "medium", "title": "Pressure / urgency language",
+                         "detail": "Phrases pushing you to act fast: "
+                                   + ", ".join(urgency) + "."})
+
+    sensitive = sorted({w for w in _SENSITIVE if w in low})
+    if sensitive:
+        score += 28
+        findings.append({"level": "high", "title": "Asks for credentials or payment",
+                         "detail": "Legitimate companies rarely ask for these by "
+                                   "email: " + ", ".join(sensitive) + "."})
+
+    urls = _URL_RE.findall(text or "")
+    ip_urls = [u for u in urls if re.search(r'https?://\d{1,3}(?:\.\d{1,3}){3}', u)]
+    shortened = [u for u in urls if any(s in u.lower() for s in _SHORTENERS)]
+    http_urls = [u for u in urls if u.lower().startswith("http://")]
+    if ip_urls:
+        score += 28
+        findings.append({"level": "high", "title": "Link points to a raw IP address",
+                         "detail": "Real companies use domain names, not numeric "
+                                   "IPs: " + ", ".join(ip_urls[:3]) + "."})
+    if shortened:
+        score += 16
+        findings.append({"level": "medium", "title": "Shortened / hidden links",
+                         "detail": "Shortened links hide their true destination: "
+                                   + ", ".join(shortened[:3]) + "."})
+    if http_urls:
+        score += 10
+        findings.append({"level": "low", "title": "Insecure (http) link",
+                         "detail": "Links use http, not https: "
+                                   + ", ".join(http_urls[:3]) + "."})
+
+    if any(g in low for g in _GENERIC):
+        score += 8
+        findings.append({"level": "low", "title": "Generic greeting",
+                         "detail": "A vague greeting like 'Dear customer' suggests "
+                                   "a mass send, not a real relationship."})
+
+    # sender domain vs link domains
+    if sender and "@" in sender and urls:
+        sdom = sender.split("@")[-1].strip().lower().strip(">")
+        link_doms = set()
+        for u in urls:
+            m = re.search(r'https?://([^/]+)/?', u.lower())
+            if m:
+                link_doms.add(m.group(1).split(":")[0])
+        if sdom and link_doms and all(sdom not in d and d not in sdom
+                                      for d in link_doms):
+            score += 12
+            findings.append({"level": "medium", "title": "Links do not match the sender",
+                             "detail": f"The sender is @{sdom} but the links point "
+                                       "elsewhere, a common spoofing sign."})
+
+    return findings, min(score, 100)
+
+
+SAMPLE_PHISHING = """Subject: URGENT: Your account has been suspended
+
+Dear Customer,
+
+We detected unusual activity and your account has been suspended. You must
+verify your account immediately to avoid permanent closure within 24 hours.
+
+Confirm your password and payment details here: http://198.51.100.23/secure-login
+
+Failure to act now will result in loss of access.
+
+Account Security Team"""
+
+
+# ----------------------------------------------------------------------
 # Extraction (needs pypdf / Pillow) - imported lazily so the pure logic
 # above can be tested without those libraries installed.
 # ----------------------------------------------------------------------
@@ -552,13 +648,7 @@ HERO_HTML = """
 # Streamlit UI
 # ----------------------------------------------------------------------
 
-def main():
-    import streamlit as st
-
-    st.set_page_config(page_title="Inconsistency Scanner", page_icon="🔎",
-                       layout="centered")
-    st.markdown(THEME_CSS, unsafe_allow_html=True)
-    st.markdown(HERO_HTML, unsafe_allow_html=True)
+def _document_scan_ui(st):
     st.caption("Upload a document (PDF or image, including iPhone HEIC), or "
                "click the sample button below to test it instantly.")
 
@@ -673,6 +763,59 @@ def main():
         "Every flag is a signal, not a verdict. A person should make the "
         "final call."
     )
+
+
+def _email_check_ui(st):
+    st.caption("Paste a suspicious email (subject and body). This flags common "
+               "phishing signals: urgent language, requests for passwords or "
+               "payment, and risky links. It is a heuristic aid, not proof.")
+
+    if st.button("Load a sample phishing email"):
+        st.session_state["email_text"] = SAMPLE_PHISHING
+
+    email_text = st.text_area("Email text", height=220, key="email_text")
+    sender = st.text_input("Sender address (optional)",
+                           placeholder="support@paypa1-security.com")
+
+    if not (email_text or "").strip():
+        st.info("Paste an email, or load the sample above, to check it.")
+        return
+
+    findings, score = check_email(email_text, sender)
+    band, summary = risk_band(score)
+    color = {"HIGH": "red", "MEDIUM": "orange", "LOW": "green"}[band]
+    mc1, mc2 = st.columns([1, 2])
+    mc1.metric("Phishing risk", f"{score}/100")
+    mc2.markdown(f"### :{color}[{band}]")
+    mc2.write(summary)
+    st.progress(score / 100)
+
+    st.subheader("Signals")
+    if not findings:
+        st.success("No common phishing signals found.")
+    else:
+        for f in findings:
+            icon = {"high": "🔴", "medium": "🟠", "low": "🟡"}[f["level"]]
+            with st.expander(f"{icon}  {f['title']}", expanded=f["level"] == "high"):
+                st.write(f["detail"])
+
+    st.caption("A clean result is not a guarantee. When unsure, do not click "
+               "links or reply. Verify with the sender through a known channel.")
+
+
+def main():
+    import streamlit as st
+
+    st.set_page_config(page_title="Fraud Scanner", page_icon="🔎",
+                       layout="centered")
+    st.markdown(THEME_CSS, unsafe_allow_html=True)
+    st.markdown(HERO_HTML, unsafe_allow_html=True)
+
+    doc_tab, email_tab = st.tabs(["📄 Document scan", "📧 Email check"])
+    with doc_tab:
+        _document_scan_ui(st)
+    with email_tab:
+        _email_check_ui(st)
 
 
 if __name__ == "__main__":
