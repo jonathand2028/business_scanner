@@ -4,3 +4,5 @@ __pycache__/
 venv/
 test_invoice.pdf
 .DS_Store
+.env
+*.env
