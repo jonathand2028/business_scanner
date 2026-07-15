@@ -173,3 +173,12 @@ urgent or pressuring language, requests for passwords or payment, links to raw
 IP addresses or shortened URLs, generic greetings, and links whose domain does
 not match the sender. Click "Load a sample phishing email" to try it. It is a
 heuristic aid, not proof; a clean result is not a guarantee.
+
+## Image OCR
+
+Uploaded images and scans are run through OCR (Tesseract) so the printed text
+(dates, vendor, invoice number) is read off the pixels and cross-checked just
+like a PDF. This needs the system package `tesseract-ocr` installed on the
+server (`apt install -y tesseract-ocr`) plus the `pytesseract` Python package
+(in requirements.txt). If Tesseract is not installed, image scanning falls back
+to metadata-only, so nothing breaks.

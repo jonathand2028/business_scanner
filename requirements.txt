@@ -2,4 +2,5 @@ streamlit
 pypdf
 Pillow
 pillow-heif
+pytesseract
 reportlab

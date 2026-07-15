@@ -445,7 +445,17 @@ def extract_from_image(file_bytes):
     mod = exif_raw.get("DateTime")
     has_meta = bool(exif_raw) or bool(info)
 
-    readable = " ".join(str(v) for v in info.values())
+    # OCR: read the printed text off the image so photos/scans get the full
+    # cross-check (dates, vendor, etc.). Requires tesseract-ocr on the system
+    # and the pytesseract package; degrades gracefully if either is missing.
+    ocr_text = ""
+    try:
+        import pytesseract
+        ocr_text = pytesseract.image_to_string(img) or ""
+    except Exception:
+        ocr_text = ""
+
+    readable = (ocr_text + " " + " ".join(str(v) for v in info.values())).strip()
     return readable, {
         "creation_date": create,
         "mod_date": mod,
@@ -670,6 +680,10 @@ html, body, [class*="css"], .stMarkdown, button, input, textarea { font-family: 
 .stButton>button[kind="primary"] { background:#2E75B6; }
 div[data-testid="stMetric"] { background:#F2F6FA; padding:14px 16px; border-radius:12px; border:1px solid #d9e6f2; }
 div[data-testid="stExpander"] { border-radius:12px; }
+#MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] { display:none !important; }
+header { visibility:hidden; height:0; }
+footer { visibility:hidden; }
+.app-foot { text-align:center; color:#8a97a6; font-size:12px; margin-top:28px; padding-top:12px; border-top:1px solid #e6ecf2; }
 </style>
 """
 
@@ -892,6 +906,11 @@ def main():
         _document_scan_ui(st)
     with email_tab:
         _email_check_ui(st)
+
+    st.markdown(
+        '<div class="app-foot">Cross-Modal Inconsistency Scanner · '
+        'fraud-ai-detection.com · a signal, not a verdict — always review.</div>',
+        unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
