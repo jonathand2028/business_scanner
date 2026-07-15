@@ -666,31 +666,70 @@ def build_sample_invoice_bytes(kind="fraud"):
 
 THEME_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-html, body, [class*="css"], .stMarkdown, button, input, textarea { font-family: 'Inter', sans-serif !important; }
-.block-container { padding-top: 1.5rem; max-width: 900px; }
-.app-hero {
-  background: linear-gradient(135deg, #1F3C88 0%, #2E75B6 100%);
-  color: #fff; padding: 22px 28px; border-radius: 16px; margin-bottom: 20px;
-  box-shadow: 0 6px 18px rgba(31,60,136,0.25);
-}
-.app-hero h1 { color:#fff !important; margin:0; font-weight:800; font-size:1.6rem; }
-.app-hero p { color:#dce8f7; margin:6px 0 0; font-size:0.95rem; }
-.stButton>button { border-radius:10px; font-weight:600; border:none; }
-.stButton>button[kind="primary"] { background:#2E75B6; }
-div[data-testid="stMetric"] { background:#F2F6FA; padding:14px 16px; border-radius:12px; border:1px solid #d9e6f2; }
-div[data-testid="stExpander"] { border-radius:12px; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+html, body, [class*="css"], .stMarkdown, button, input, textarea, select { font-family: 'Inter', sans-serif !important; }
+.stApp { background: #f6f8fc; }
+.block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 880px; }
 #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] { display:none !important; }
 header { visibility:hidden; height:0; }
 footer { visibility:hidden; }
-.app-foot { text-align:center; color:#8a97a6; font-size:12px; margin-top:28px; padding-top:12px; border-top:1px solid #e6ecf2; }
+
+/* hero */
+.hero {
+  background: linear-gradient(135deg, #16306b 0%, #2E75B6 62%, #3a8fd0 100%);
+  color:#fff; padding: 38px 36px 32px; border-radius: 22px; margin-bottom: 26px;
+  box-shadow: 0 16px 40px rgba(22,48,107,.30); position:relative; overflow:hidden;
+}
+.hero::after { content:""; position:absolute; right:-60px; top:-60px; width:260px; height:260px;
+  background:radial-gradient(circle, rgba(255,255,255,.16), transparent 70%); }
+.hero-badge { display:inline-block; background:rgba(255,255,255,.18); color:#fff; font-size:11px;
+  font-weight:700; letter-spacing:.14em; padding:6px 13px; border-radius:20px; margin-bottom:16px; }
+.hero h1 { color:#fff !important; margin:0; font-weight:800; font-size:2.15rem; line-height:1.12; letter-spacing:-.02em; }
+.hero p { color:#dce8f7; margin:14px 0 0; font-size:1.02rem; max-width:600px; line-height:1.55; }
+.pills { margin-top:20px; display:flex; flex-wrap:wrap; gap:9px; position:relative; z-index:1; }
+.pills span { background:rgba(255,255,255,.15); color:#fff; font-size:12.5px; font-weight:600;
+  padding:7px 13px; border-radius:20px; border:1px solid rgba(255,255,255,.14); }
+
+/* headings */
+h1,h2,h3 { letter-spacing:-.01em; }
+.stMarkdown h3 { color:#16306b; font-weight:700; }
+
+/* tabs as a segmented control */
+.stTabs [data-baseweb="tab-list"] { gap:6px; background:#e9eff8; padding:6px; border-radius:14px; }
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display:none; }
+.stTabs [data-baseweb="tab"] { border-radius:10px; padding:9px 20px; font-weight:600; color:#4a5a70; }
+.stTabs [aria-selected="true"] { background:#fff; color:#16306b !important; box-shadow:0 2px 8px rgba(22,48,107,.12); }
+
+/* buttons */
+.stButton>button { border-radius:11px; font-weight:600; padding:9px 20px; border:1px solid #d7e2f0;
+  background:#fff; color:#1f3c88; transition:all .15s ease; }
+.stButton>button:hover { border-color:#2E75B6; transform:translateY(-1px); box-shadow:0 6px 16px rgba(46,117,182,.18); }
+.stButton>button[kind="primary"] { background:linear-gradient(135deg,#2E75B6,#16306b); color:#fff; border:none;
+  box-shadow:0 6px 16px rgba(22,48,107,.28); }
+.stDownloadButton>button { border-radius:11px; font-weight:600; }
+
+/* inputs */
+.stTextInput input, .stTextArea textarea, .stNumberInput input, .stSelectbox div[data-baseweb="select"] > div {
+  border-radius:11px !important; }
+[data-testid="stFileUploaderDropzone"] { border-radius:14px; border:1.5px dashed #b9cde4; background:#f7fafd; }
+
+/* cards: expanders + metrics */
+div[data-testid="stExpander"] { border:1px solid #e6ecf3; border-radius:16px; background:#fff;
+  box-shadow:0 1px 3px rgba(20,40,80,.04); overflow:hidden; }
+div[data-testid="stExpander"] summary { font-weight:600; padding:4px 2px; }
+div[data-testid="stMetric"] { background:#fff; padding:16px 18px; border-radius:16px; border:1px solid #e2e9f3;
+  box-shadow:0 1px 3px rgba(20,40,80,.04); }
+
+.app-foot { text-align:center; color:#8a97a6; font-size:12px; margin-top:34px; padding-top:14px; border-top:1px solid #e6ecf2; }
 </style>
 """
 
 HERO_HTML = """
-<div class="app-hero">
-  <h1>🔎 Cross-Modal Inconsistency Scanner</h1>
-  <p>Catches document fraud by checking whether a file's text, its hidden metadata, and your records all agree.</p>
+<div class="hero">
+  <div class="hero-badge">FRAUD DETECTION</div>
+  <h1>Catch fake documents before they cost you.</h1>
+  <p>Upload an invoice, ID, or receipt. The engine cross-checks the visible text, the hidden metadata, and your records, and flags exactly what does not add up.</p>
+  <div class="pills"><span>PDF &amp; image OCR</span><span>Metadata forensics</span><span>Phishing email check</span><span>Instant risk report</span></div>
 </div>
 """
 
