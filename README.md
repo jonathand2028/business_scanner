@@ -6,9 +6,7 @@ separate layers agree with each other, instead of guessing whether AI made it.
 **Live demo:** https://fraud-ai-detection.com
 &nbsp;·&nbsp; ![CI](https://github.com/jonathand2028/business_scanner/actions/workflows/ci.yml/badge.svg)
 
-<!-- Add a screenshot: take one of the live site (Cmd-Shift-4 on Mac), save it
-     as docs/screenshot.png, and it will appear here. -->
-<!-- ![Screenshot](docs/screenshot.png) -->
+![Screenshot](docs/screenshot.png)
 
 ---
 
