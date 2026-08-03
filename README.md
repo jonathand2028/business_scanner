@@ -68,6 +68,39 @@ pytest -q
 Unit tests in `test_app.py` cover the detection logic and the sample generator.
 CI runs them on every push via `.github/workflows/ci.yml`.
 
+## Measuring detection quality
+
+Unit tests prove the code runs. They don't say whether the detector is any
+*good*. `eval/` answers that against a labeled dataset:
+
+```bash
+python eval/run_eval.py              # full report
+python eval/run_eval.py --markdown   # writes eval/RESULTS.md
+```
+
+Current results ([full report](eval/RESULTS.md)) on 17 labeled documents and
+6 labeled emails, flagging at the app's MEDIUM band (score >= 20):
+
+| | precision | recall | F1 |
+|---|---|---|---|
+| Document fraud | 0.80 | 0.89 | 0.84 |
+| Phishing email | 0.75 | 1.00 | 0.86 |
+
+The harness also reports a **threshold sweep** (the precision/recall tradeoff
+at every cutoff) and a **per-signal breakdown** showing how often each
+individual check fires on fraudulent vs. legitimate documents. That breakdown
+is the useful part: it shows the date-vs-file-creation and editing-software
+checks fire only on genuine fraud, while the "missing metadata" heuristic fires
+about equally on both and is close to uninformative on its own.
+
+The dataset deliberately includes hard cases in both directions — legitimate
+documents whose metadata was stripped in transit, fraudulent ones whose only
+tell is a late modification — so the numbers reflect real tradeoffs instead of
+a dataset chosen to look good. Every miss is listed by name in the report.
+
+CI fails if document F1 drops below 0.80, so a change that quietly degrades
+detection is caught the same way a broken test is.
+
 ## Deployment
 
 Runs as a systemd service on `127.0.0.1:8501`, with Nginx reverse-proxying the

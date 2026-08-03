@@ -21,3 +21,6 @@ jobs:
           pip install pytest
       - name: Run tests
         run: pytest -q
+
+      - name: Evaluate detection quality
+        run: python eval/run_eval.py --min-f1 0.80
