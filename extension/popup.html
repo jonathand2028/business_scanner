@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --coral: #F1635A;
+      --dark: #1A1A1A;
+      --grey: #6A6A6A;
+      --line: #E4E4E4;
+      --bg: #FFFFFF;
+      --high: #D93025;
+      --medium: #E08600;
+      --low: #4A7DBD;
+      --ok: #1E8E3E;
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 380px;
+      margin: 0;
+      padding: 16px;
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      color: var(--dark);
+      background: var(--bg);
+    }
+    h1 { font-size: 15px; margin: 0 0 2px; }
+    .sub { font-size: 11px; color: var(--grey); margin-bottom: 14px; }
+    button {
+      width: 100%; padding: 9px 12px; border: 0; border-radius: 6px;
+      background: var(--coral); color: #fff; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(0.94); }
+    button.secondary {
+      background: #fff; color: var(--dark); border: 1px solid var(--line);
+      font-weight: 500; margin-top: 8px;
+    }
+    textarea {
+      width: 100%; height: 90px; margin-top: 8px; padding: 8px;
+      border: 1px solid var(--line); border-radius: 6px; font-size: 12px;
+      font-family: inherit; resize: vertical;
+    }
+    input[type=text] {
+      width: 100%; margin-top: 6px; padding: 7px 8px;
+      border: 1px solid var(--line); border-radius: 6px; font-size: 12px;
+    }
+    .hidden { display: none; }
+    .band {
+      margin: 14px 0 10px; padding: 10px 12px; border-radius: 6px;
+      border-left: 4px solid var(--grey); background: #FAFAFA;
+    }
+    .band .label { font-size: 15px; font-weight: 700; }
+    .band .note { font-size: 12px; color: var(--grey); }
+    .band.HIGH   { border-left-color: var(--high); }
+    .band.HIGH .label { color: var(--high); }
+    .band.MEDIUM { border-left-color: var(--medium); }
+    .band.MEDIUM .label { color: var(--medium); }
+    .band.LOW    { border-left-color: var(--ok); }
+    .band.LOW .label { color: var(--ok); }
+    .finding {
+      padding: 9px 0; border-top: 1px solid var(--line);
+    }
+    .finding .t { font-weight: 600; font-size: 12.5px; }
+    .finding .d { font-size: 11.5px; color: var(--grey); margin-top: 2px;
+                  word-break: break-word; }
+    .pill {
+      display: inline-block; font-size: 9.5px; font-weight: 700;
+      letter-spacing: .04em; padding: 1px 6px; border-radius: 10px;
+      color: #fff; margin-right: 6px; vertical-align: 1px;
+    }
+    .pill.high { background: var(--high); }
+    .pill.medium { background: var(--medium); }
+    .pill.low { background: var(--low); }
+    .meta { font-size: 11px; color: var(--grey); margin-top: 4px; }
+    .footer {
+      margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
+      font-size: 10.5px; color: var(--grey);
+    }
+    .err { color: var(--high); font-size: 12px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Phishing Signal Scanner</h1>
+  <div class="sub">Runs locally. Nothing leaves your browser.</div>
+
+  <button id="scan">Scan the open email</button>
+  <button id="toggle-manual" class="secondary">Paste an email instead</button>
+
+  <div id="manual" class="hidden">
+    <input type="text" id="sender" placeholder="Sender address (optional)">
+    <textarea id="text" placeholder="Paste the email text here"></textarea>
+    <button id="scan-manual" class="secondary">Scan pasted text</button>
+  </div>
+
+  <div id="error" class="err hidden"></div>
+  <div id="result" class="hidden">
+    <div id="band" class="band">
+      <div class="label" id="band-label"></div>
+      <div class="note" id="band-note"></div>
+      <div class="meta" id="band-meta"></div>
+    </div>
+    <div id="findings"></div>
+  </div>
+
+  <div class="footer">
+    A decision aid, not a verdict. Signals are heuristics — a low score is not
+    a guarantee an email is safe.
+  </div>
+
+  <script src="detector.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

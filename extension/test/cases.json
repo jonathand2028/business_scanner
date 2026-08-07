@@ -1,0 +1,128 @@
+[
+  {
+    "id": "phish_classic",
+    "text": "Subject: URGENT: Your account has been suspended\n\nWe detected unusual activity. You must verify your account immediately to avoid permanent closure within 24 hours.\nConfirm your password here: http://198.51.100.23/secure-login\nFailure to act now will result in loss of access.",
+    "sender": "security@paypa1-alerts.com",
+    "label": "phishing",
+    "expected_score": 100,
+    "expected_titles": [
+      "Pressure / urgency language",
+      "Asks for credentials or payment",
+      "Link points to a raw IP address",
+      "Insecure (http) link",
+      "Links do not match the sender"
+    ],
+    "expected_band": "HIGH"
+  },
+  {
+    "id": "phish_invoice_scam",
+    "text": "Subject: Outstanding payment - final notice\n\nYour invoice is overdue. Please make payment immediately via the link below to avoid suspension of services.\nhttps://bit.ly/pay-now-secure\nWire transfer details attached. Act now.",
+    "sender": "billing@acme-supply-invoices.net",
+    "label": "phishing",
+    "expected_score": 78,
+    "expected_titles": [
+      "Pressure / urgency language",
+      "Asks for credentials or payment",
+      "Shortened / hidden links",
+      "Links do not match the sender"
+    ],
+    "expected_band": "HIGH"
+  },
+  {
+    "id": "phish_credential_harvest",
+    "text": "Subject: Action required: confirm your account\n\nDear user, our records show your login credentials expire today. Please log in and confirm your password as soon as possible.\nhttp://secure-login-verify.example.com/session",
+    "sender": "it-helpdesk@uchicago-support.co",
+    "label": "phishing",
+    "expected_score": 80,
+    "expected_titles": [
+      "Pressure / urgency language",
+      "Asks for credentials or payment",
+      "Insecure (http) link",
+      "Generic greeting",
+      "Links do not match the sender"
+    ],
+    "expected_band": "HIGH"
+  },
+  {
+    "id": "legit_newsletter",
+    "text": "Subject: Your monthly statement is ready\n\nHello Jonathan,\n\nYour June statement is now available. You can view it by signing in to your account through our website at your convenience.\n\nThank you,\nAccounts Team",
+    "sender": "statements@northwindtraders.com",
+    "label": "legitimate",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "legit_vendor_followup",
+    "text": "Subject: Following up on invoice INV-4471\n\nHi Jonathan,\n\nJust checking in on the invoice we sent last week. Let me know if you need anything else from our side.\n\nBest,\nSarah\nAcme Supply Co",
+    "sender": "sarah@acmesupply.com",
+    "label": "legitimate",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "legit_hard_urgent_real",
+    "text": "Subject: Time-sensitive: contract signature needed within 24 hours\n\nHi Jonathan,\n\nOur legal team needs the signed contract back within 24 hours to keep the project on schedule. Sorry for the short notice.\n\nThanks,\nMichael",
+    "sender": "michael@globexcorp.com",
+    "label": "legitimate",
+    "expected_score": 22,
+    "expected_titles": [
+      "Pressure / urgency language"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "edge_empty",
+    "text": "",
+    "sender": "",
+    "label": "legitimate",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "edge_no_sender",
+    "text": "Please verify your account immediately. http://bit.ly/x",
+    "sender": "",
+    "label": "phishing",
+    "expected_score": 48,
+    "expected_titles": [
+      "Pressure / urgency language",
+      "Shortened / hidden links",
+      "Insecure (http) link"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "edge_generic_greeting",
+    "text": "Dear customer, your statement is ready.",
+    "sender": "a@b.com",
+    "label": "legitimate",
+    "expected_score": 8,
+    "expected_titles": [
+      "Generic greeting"
+    ],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "edge_matching_domain",
+    "text": "See https://acmesupply.com/invoice for details.",
+    "sender": "sarah@acmesupply.com",
+    "label": "legitimate",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "edge_https_only",
+    "text": "Login here https://secure.example.com to continue",
+    "sender": "x@example.com",
+    "label": "phishing",
+    "expected_score": 28,
+    "expected_titles": [
+      "Asks for credentials or payment"
+    ],
+    "expected_band": "MEDIUM"
+  }
+]

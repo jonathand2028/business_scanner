@@ -68,6 +68,18 @@ pytest -q
 Unit tests in `test_app.py` cover the detection logic and the sample generator.
 CI runs them on every push via `.github/workflows/ci.yml`.
 
+## Chrome extension
+
+[`extension/`](extension/) is a Manifest V3 Chrome extension that checks the
+email you're reading in Gmail for phishing signals. **It makes no network calls
+at all** — the detection logic is ported to JavaScript and runs entirely in the
+browser, because a tool that reads your email shouldn't upload it.
+
+Keeping the same rules in two languages invites drift, so
+`node extension/test/run_tests.js` asserts the JavaScript port reproduces the
+Python implementation's score, risk band, and findings exactly across 11
+labeled cases. CI runs it on every push.
+
 ## Measuring detection quality
 
 Unit tests prove the code runs. They don't say whether the detector is any

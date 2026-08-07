@@ -24,3 +24,10 @@ jobs:
 
       - name: Evaluate detection quality
         run: python eval/run_eval.py --min-f1 0.80
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check extension matches the Python detector
+        run: node extension/test/run_tests.js
