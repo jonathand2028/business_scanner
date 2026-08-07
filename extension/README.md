@@ -14,13 +14,21 @@ that reads your email has no business uploading it.
 1. Open `chrome://extensions`
 2. Turn on **Developer mode** (top right)
 3. Click **Load unpacked** and select this `extension/` folder
-4. Open an email in Gmail and click the extension icon
+4. **Pin it:** click the puzzle-piece icon in Chrome's toolbar, find
+   "Phishing Signal Scanner", and click the pin. Without this the icon stays
+   hidden in that menu and the extension looks like it did nothing.
 
 ## Using it
 
-- **Scan the open email** reads the message currently on screen in Gmail.
+Open an email in Gmail and click the coral shield icon. **It scans
+automatically when the popup opens** — no button press needed.
+
+- **Scan again** re-reads the page after you switch messages.
 - **Paste an email instead** works anywhere, and is the fallback if Gmail's
-  layout changes.
+  layout changes. ⌘/Ctrl + Enter scans.
+
+Note that the extension does not alter the Gmail page itself. Everything
+appears in the popup.
 
 Links are read from `href` attributes rather than the visible link text, so the
 detector sees the real destination even when the display text hides it.

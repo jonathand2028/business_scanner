@@ -7,8 +7,7 @@
       --coral: #F1635A;
       --dark: #1A1A1A;
       --grey: #6A6A6A;
-      --line: #E4E4E4;
-      --bg: #FFFFFF;
+      --line: #E6E6E6;
       --high: #D93025;
       --medium: #E08600;
       --low: #4A7DBD;
@@ -16,15 +15,15 @@
     }
     * { box-sizing: border-box; }
     body {
-      width: 380px;
-      margin: 0;
-      padding: 16px;
+      width: 380px; margin: 0; padding: 16px;
       font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-      color: var(--dark);
-      background: var(--bg);
+      color: var(--dark); background: #fff;
     }
-    h1 { font-size: 15px; margin: 0 0 2px; }
+    header { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; }
+    header img { width: 20px; height: 20px; border-radius: 5px; }
+    h1 { font-size: 14.5px; margin: 0; }
     .sub { font-size: 11px; color: var(--grey); margin-bottom: 14px; }
+
     button {
       width: 100%; padding: 9px 12px; border: 0; border-radius: 6px;
       background: var(--coral); color: #fff; font-size: 13px; font-weight: 600;
@@ -35,64 +34,72 @@
       background: #fff; color: var(--dark); border: 1px solid var(--line);
       font-weight: 500; margin-top: 8px;
     }
-    textarea {
-      width: 100%; height: 90px; margin-top: 8px; padding: 8px;
-      border: 1px solid var(--line); border-radius: 6px; font-size: 12px;
-      font-family: inherit; resize: vertical;
+    button.secondary:hover { background: #FAFAFA; filter: none; }
+
+    textarea, input[type=text] {
+      width: 100%; padding: 8px; border: 1px solid var(--line);
+      border-radius: 6px; font-size: 12px; font-family: inherit;
     }
-    input[type=text] {
-      width: 100%; margin-top: 6px; padding: 7px 8px;
-      border: 1px solid var(--line); border-radius: 6px; font-size: 12px;
-    }
+    textarea { height: 92px; margin-top: 6px; resize: vertical; }
+    input[type=text] { margin-top: 8px; }
+    .hint { font-size: 10.5px; color: var(--grey); margin-top: 5px; }
+
     .hidden { display: none; }
+
+    .status {
+      font-size: 12px; color: var(--grey); padding: 9px 0;
+    }
+    .status.warn { color: #8A5A00; }
+
     .band {
-      margin: 14px 0 10px; padding: 10px 12px; border-radius: 6px;
+      margin: 12px 0 2px; padding: 11px 13px; border-radius: 6px;
       border-left: 4px solid var(--grey); background: #FAFAFA;
     }
     .band .label { font-size: 15px; font-weight: 700; }
-    .band .note { font-size: 12px; color: var(--grey); }
-    .band.HIGH   { border-left-color: var(--high); }
+    .band .note  { font-size: 12px; color: var(--grey); margin-top: 1px; }
+    .band .meta  { font-size: 11px; color: var(--grey); margin-top: 5px;
+                   word-break: break-word; }
+    .band.HIGH   { border-left-color: var(--high); background: #FDF3F2; }
     .band.HIGH .label { color: var(--high); }
-    .band.MEDIUM { border-left-color: var(--medium); }
+    .band.MEDIUM { border-left-color: var(--medium); background: #FDF8EF; }
     .band.MEDIUM .label { color: var(--medium); }
-    .band.LOW    { border-left-color: var(--ok); }
+    .band.LOW    { border-left-color: var(--ok); background: #F2F9F4; }
     .band.LOW .label { color: var(--ok); }
-    .finding {
-      padding: 9px 0; border-top: 1px solid var(--line);
+
+    .count {
+      font-size: 10.5px; font-weight: 700; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--grey);
+      margin: 14px 0 2px;
     }
+    .finding { padding: 9px 0; border-top: 1px solid var(--line); }
     .finding .t { font-weight: 600; font-size: 12.5px; }
     .finding .d { font-size: 11.5px; color: var(--grey); margin-top: 2px;
                   word-break: break-word; }
     .pill {
-      display: inline-block; font-size: 9.5px; font-weight: 700;
-      letter-spacing: .04em; padding: 1px 6px; border-radius: 10px;
-      color: #fff; margin-right: 6px; vertical-align: 1px;
+      display: inline-block; font-size: 9px; font-weight: 700;
+      letter-spacing: .05em; text-transform: uppercase;
+      padding: 1px 6px; border-radius: 10px; color: #fff;
+      margin-right: 6px; vertical-align: 1px;
     }
     .pill.high { background: var(--high); }
     .pill.medium { background: var(--medium); }
     .pill.low { background: var(--low); }
-    .meta { font-size: 11px; color: var(--grey); margin-top: 4px; }
+
     .footer {
       margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
       font-size: 10.5px; color: var(--grey);
     }
-    .err { color: var(--high); font-size: 12px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Phishing Signal Scanner</h1>
+  <header>
+    <img src="icons/icon48.png" alt="">
+    <h1>Phishing Signal Scanner</h1>
+  </header>
   <div class="sub">Runs locally. Nothing leaves your browser.</div>
 
-  <button id="scan">Scan the open email</button>
-  <button id="toggle-manual" class="secondary">Paste an email instead</button>
+  <div id="status" class="status">Reading the open email…</div>
 
-  <div id="manual" class="hidden">
-    <input type="text" id="sender" placeholder="Sender address (optional)">
-    <textarea id="text" placeholder="Paste the email text here"></textarea>
-    <button id="scan-manual" class="secondary">Scan pasted text</button>
-  </div>
-
-  <div id="error" class="err hidden"></div>
   <div id="result" class="hidden">
     <div id="band" class="band">
       <div class="label" id="band-label"></div>
@@ -102,9 +109,19 @@
     <div id="findings"></div>
   </div>
 
+  <button id="rescan" class="secondary hidden">Scan again</button>
+  <button id="toggle-manual" class="secondary">Paste an email instead</button>
+
+  <div id="manual" class="hidden">
+    <input type="text" id="sender" placeholder="Sender address (optional)">
+    <textarea id="text" placeholder="Paste the email text here"></textarea>
+    <button id="scan-manual">Scan pasted text</button>
+    <div class="hint">Tip: ⌘/Ctrl + Enter to scan.</div>
+  </div>
+
   <div class="footer">
-    A decision aid, not a verdict. Signals are heuristics — a low score is not
-    a guarantee an email is safe.
+    A decision aid, not a verdict. These are heuristics — a low score doesn't
+    guarantee an email is safe.
   </div>
 
   <script src="detector.js"></script>
