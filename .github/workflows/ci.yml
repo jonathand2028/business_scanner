@@ -31,3 +31,8 @@ jobs:
 
       - name: Check extension matches the Python detector
         run: node extension/test/run_tests.js
+
+      - name: Check the in-browser PDF reader against pypdf
+        run: |
+          python extension/test/make_pdf_fixtures.py
+          node extension/test/pdf_test.js

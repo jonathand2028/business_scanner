@@ -1,0 +1,479 @@
+[
+  {
+    "id": "clean_standard_01",
+    "text": "Acme Supply Co\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-4471\nInvoice Date: June 15, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Acme Billing System v4",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "clean_standard_02",
+    "text": "Northwind Traders\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-8890\nInvoice Date: June 12, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260612120000Z",
+      "mod_date": "D:20260612120000Z",
+      "software": "QuickBooks",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "clean_standard_03",
+    "text": "Globex Corporation\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-2210\nInvoice Date: June 05, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260605120000Z",
+      "mod_date": "D:20260606120000Z",
+      "software": "SAP Export",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "clean_hard_due_date",
+    "text": "Acme Supply Co\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-4471\nInvoice Date: June 15, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n\nPayment Due: July 15, 2026\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Acme Billing System v4",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "clean_hard_stripped_meta",
+    "text": "Northwind Traders\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-7712\nInvoice Date: June 14, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": null,
+      "mod_date": null,
+      "software": null,
+      "has_metadata": false
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 20,
+    "expected_titles": [
+      "Hidden file data is missing"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "clean_hard_new_vendor",
+    "text": "Initech Industries\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-3140\nInvoice Date: June 15, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Xero",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 25,
+    "expected_titles": [
+      "No approved vendor found in the document"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "clean_hard_scanned_original",
+    "text": "Globex Corporation\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-5501\nInvoice Date: June 10, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260610120000Z",
+      "mod_date": "D:20260610120000Z",
+      "software": "Canon ScanFront",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "clean_hard_old_archived",
+    "text": "Acme Supply Co\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-0091\nInvoice Date: May 11, 2025\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20250511120000Z",
+      "mod_date": "D:20250511120000Z",
+      "software": "Acme Billing System v3",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "clean",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "fraud_backdated_01",
+    "text": "Acme Supply Co\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9001\nInvoice Date: February 15, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Adobe Photoshop 2026",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 65,
+    "expected_titles": [
+      "Printed date is older than the file itself",
+      "Edited in image/graphics software"
+    ],
+    "expected_band": "HIGH"
+  },
+  {
+    "id": "fraud_photoshop_01",
+    "text": "Northwind Traders\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9002\nInvoice Date: June 13, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260613120000Z",
+      "mod_date": "D:20260613120000Z",
+      "software": "Adobe Photoshop 2026",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 30,
+    "expected_titles": [
+      "Edited in image/graphics software"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "fraud_canva_backdated",
+    "text": "Globex Corporation\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9003\nInvoice Date: March 17, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260616120000Z",
+      "software": "Canva",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 65,
+    "expected_titles": [
+      "Printed date is older than the file itself",
+      "Edited in image/graphics software"
+    ],
+    "expected_band": "HIGH"
+  },
+  {
+    "id": "fraud_unknown_vendor_edited",
+    "text": "Definitely Real Supplies LLC\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9004\nInvoice Date: April 16, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "GIMP",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 90,
+    "expected_titles": [
+      "Printed date is older than the file itself",
+      "Edited in image/graphics software",
+      "No approved vendor found in the document"
+    ],
+    "expected_band": "HIGH"
+  },
+  {
+    "id": "fraud_future_dated",
+    "text": "Acme Supply Co\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9005\nInvoice Date: July 30, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Acme Billing System v4",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 20,
+    "expected_titles": [
+      "Dated after the file was created"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "fraud_copy_paste_dates",
+    "text": "Northwind Traders\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9006\nInvoice Date: June 14, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n\nOriginal agreement dated March 12, 2019\nRenewed January 5, 2020\n",
+    "metadata": {
+      "creation_date": "D:20260614120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Adobe Illustrator",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 75,
+    "expected_titles": [
+      "Printed date is older than the file itself",
+      "Edited in image/graphics software",
+      "Dates inside the document are far apart"
+    ],
+    "expected_band": "HIGH"
+  },
+  {
+    "id": "fraud_hard_subtle_edit",
+    "text": "Acme Supply Co\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9007\nInvoice Date: June 13, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260613120000Z",
+      "mod_date": "D:20260705120000Z",
+      "software": "Acme Billing System v4",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 15,
+    "expected_titles": [
+      "Modified after it was created"
+    ],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "fraud_hard_stripped_and_unknown",
+    "text": "Vertex Global Trading\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9008\nInvoice Date: June 11, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": null,
+      "mod_date": null,
+      "software": null,
+      "has_metadata": false
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 45,
+    "expected_titles": [
+      "Hidden file data is missing",
+      "No approved vendor found in the document"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "fraud_hard_mild_backdate",
+    "text": "Globex Corporation\n123 Commerce Street, Chicago, IL 60601\n\nINVOICE\nInvoice Number: INV-9009\nInvoice Date: May 06, 2026\n\nDescription                Qty     Amount\nConsulting services         40    $4,820.00\n\nTotal Due: $4,820.00\n",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Globex ERP",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co",
+      "Northwind Traders",
+      "Globex Corporation"
+    ],
+    "claims_original": true,
+    "label": "fraud",
+    "expected_score": 35,
+    "expected_titles": [
+      "Printed date is older than the file itself"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "edge_no_dates",
+    "text": "Acme Supply Co\nInvoice for services rendered\nTotal: $100",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Acme Billing",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co"
+    ],
+    "claims_original": true,
+    "label": "n/a",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "edge_iso_and_slash",
+    "text": "Invoice Date: 2026-06-15 and also 06/20/2026",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "X",
+      "has_metadata": true
+    },
+    "vendors": [
+      "x"
+    ],
+    "claims_original": true,
+    "label": "n/a",
+    "expected_score": 25,
+    "expected_titles": [
+      "No approved vendor found in the document"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "edge_dd_month_yyyy",
+    "text": "Invoice dated 3 March 2026 from Acme Supply Co",
+    "metadata": {
+      "creation_date": "D:20260610120000Z",
+      "mod_date": "D:20260610120000Z",
+      "software": "Acme",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co"
+    ],
+    "claims_original": true,
+    "label": "n/a",
+    "expected_score": 35,
+    "expected_titles": [
+      "Printed date is older than the file itself"
+    ],
+    "expected_band": "MEDIUM"
+  },
+  {
+    "id": "edge_invalid_date",
+    "text": "Invoice Date: 2026-02-30 from Acme Supply Co",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Acme",
+      "has_metadata": true
+    },
+    "vendors": [
+      "Acme Supply Co"
+    ],
+    "claims_original": true,
+    "label": "n/a",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "edge_no_vendors_list",
+    "text": "Some invoice text dated 2026-06-15",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Acme",
+      "has_metadata": true
+    },
+    "vendors": [],
+    "claims_original": true,
+    "label": "n/a",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  },
+  {
+    "id": "edge_not_original",
+    "text": "Receipt dated 2026-06-15",
+    "metadata": {
+      "creation_date": "D:20260615120000Z",
+      "mod_date": "D:20260615120000Z",
+      "software": "Adobe Photoshop 2026",
+      "has_metadata": true
+    },
+    "vendors": [],
+    "claims_original": false,
+    "label": "n/a",
+    "expected_score": 0,
+    "expected_titles": [],
+    "expected_band": "LOW"
+  }
+]

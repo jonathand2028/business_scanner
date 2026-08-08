@@ -15,14 +15,26 @@
     }
     * { box-sizing: border-box; }
     body {
-      width: 380px; margin: 0; padding: 16px;
+      width: 400px; margin: 0; padding: 16px;
       font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
       color: var(--dark); background: #fff;
     }
     header { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; }
     header img { width: 20px; height: 20px; border-radius: 5px; }
     h1 { font-size: 14.5px; margin: 0; }
-    .sub { font-size: 11px; color: var(--grey); margin-bottom: 14px; }
+    .sub { font-size: 11px; color: var(--grey); margin-bottom: 12px; }
+
+    /* tabs */
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line);
+            margin-bottom: 12px; }
+    .tab {
+      flex: 1; padding: 7px 8px; background: none; border: 0;
+      border-bottom: 2px solid transparent; border-radius: 0;
+      font-size: 12.5px; font-weight: 600; color: var(--grey); cursor: pointer;
+      width: auto;
+    }
+    .tab:hover { color: var(--dark); filter: none; background: none; }
+    .tab.active { color: var(--coral); border-bottom-color: var(--coral); }
 
     button {
       width: 100%; padding: 9px 12px; border: 0; border-radius: 6px;
@@ -40,15 +52,24 @@
       width: 100%; padding: 8px; border: 1px solid var(--line);
       border-radius: 6px; font-size: 12px; font-family: inherit;
     }
-    textarea { height: 92px; margin-top: 6px; resize: vertical; }
+    textarea { height: 88px; margin-top: 6px; resize: vertical; }
     input[type=text] { margin-top: 8px; }
+    label.field { display: block; font-size: 11px; color: var(--grey);
+                  margin-top: 10px; font-weight: 600; }
     .hint { font-size: 10.5px; color: var(--grey); margin-top: 5px; }
-
     .hidden { display: none; }
 
-    .status {
-      font-size: 12px; color: var(--grey); padding: 9px 0;
+    /* drop zone */
+    .drop {
+      margin-top: 2px; padding: 22px 14px; text-align: center;
+      border: 2px dashed var(--line); border-radius: 8px; cursor: pointer;
+      color: var(--grey); font-size: 12px; background: #FCFCFC;
     }
+    .drop:hover, .drop.over { border-color: var(--coral); background: #FFF7F6;
+                              color: var(--dark); }
+    .drop strong { color: var(--dark); font-size: 12.5px; }
+
+    .status { font-size: 12px; color: var(--grey); padding: 9px 0; }
     .status.warn { color: #8A5A00; }
 
     .band {
@@ -68,8 +89,7 @@
 
     .count {
       font-size: 10.5px; font-weight: 700; letter-spacing: .05em;
-      text-transform: uppercase; color: var(--grey);
-      margin: 14px 0 2px;
+      text-transform: uppercase; color: var(--grey); margin: 14px 0 2px;
     }
     .finding { padding: 9px 0; border-top: 1px solid var(--line); }
     .finding .t { font-weight: 600; font-size: 12.5px; }
@@ -85,6 +105,13 @@
     .pill.medium { background: var(--medium); }
     .pill.low { background: var(--low); }
 
+    .extract {
+      margin-top: 10px; padding: 9px 11px; border-radius: 6px;
+      background: #F6F6F4; font-size: 11px; color: var(--grey);
+      line-height: 1.45;
+    }
+    .extract b { color: var(--dark); }
+
     .footer {
       margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
       font-size: 10.5px; color: var(--grey);
@@ -94,37 +121,80 @@
 <body>
   <header>
     <img src="icons/icon48.png" alt="">
-    <h1>Phishing Signal Scanner</h1>
+    <h1>Fraud &amp; Phishing Scanner</h1>
   </header>
   <div class="sub">Runs locally. Nothing leaves your browser.</div>
 
-  <div id="status" class="status">Reading the open email…</div>
-
-  <div id="result" class="hidden">
-    <div id="band" class="band">
-      <div class="label" id="band-label"></div>
-      <div class="note" id="band-note"></div>
-      <div class="meta" id="band-meta"></div>
-    </div>
-    <div id="findings"></div>
+  <div class="tabs">
+    <button class="tab active" id="tab-email" data-panel="panel-email">Email</button>
+    <button class="tab" id="tab-doc" data-panel="panel-doc">Document</button>
   </div>
 
-  <button id="rescan" class="secondary hidden">Scan again</button>
-  <button id="toggle-manual" class="secondary">Paste an email instead</button>
+  <!-- ============ EMAIL ============ -->
+  <div id="panel-email">
+    <div id="status" class="status">Reading the open email…</div>
 
-  <div id="manual" class="hidden">
-    <input type="text" id="sender" placeholder="Sender address (optional)">
-    <textarea id="text" placeholder="Paste the email text here"></textarea>
-    <button id="scan-manual">Scan pasted text</button>
-    <div class="hint">Tip: ⌘/Ctrl + Enter to scan.</div>
+    <div id="result" class="hidden">
+      <div id="band" class="band">
+        <div class="label" id="band-label"></div>
+        <div class="note" id="band-note"></div>
+        <div class="meta" id="band-meta"></div>
+      </div>
+      <div id="findings"></div>
+    </div>
+
+    <button id="rescan" class="secondary hidden">Scan again</button>
+    <button id="toggle-manual" class="secondary">Paste an email instead</button>
+
+    <div id="manual" class="hidden">
+      <input type="text" id="sender" placeholder="Sender address (optional)">
+      <textarea id="text" placeholder="Paste the email text here"></textarea>
+      <button id="scan-manual">Scan pasted text</button>
+      <div class="hint">Tip: ⌘/Ctrl + Enter to scan.</div>
+    </div>
+  </div>
+
+  <!-- ============ DOCUMENT ============ -->
+  <div id="panel-doc" class="hidden">
+    <div class="drop" id="drop">
+      <strong>Drop a PDF here, or click to choose</strong><br>
+      Checks the printed dates against the file's hidden metadata
+    </div>
+    <input type="file" id="file" accept=".pdf,.jpg,.jpeg" class="hidden">
+
+    <label class="field" for="vendors">Approved vendors (optional, comma separated)</label>
+    <input type="text" id="vendors" placeholder="Acme Supply Co, Northwind Traders">
+
+    <div id="doc-status" class="status hidden"></div>
+
+    <div id="doc-result" class="hidden">
+      <div id="doc-band" class="band">
+        <div class="label" id="doc-band-label"></div>
+        <div class="note" id="doc-band-note"></div>
+        <div class="meta" id="doc-band-meta"></div>
+      </div>
+      <div id="doc-findings"></div>
+      <div class="extract" id="doc-extract"></div>
+    </div>
+
+    <button id="doc-toggle-manual" class="secondary">Paste document text instead</button>
+    <div id="doc-manual" class="hidden">
+      <textarea id="doc-text" placeholder="Paste the document text here"></textarea>
+      <button id="doc-scan-manual">Scan pasted text</button>
+      <div class="hint">
+        Without a file there's no metadata, so only the text-based checks run.
+      </div>
+    </div>
   </div>
 
   <div class="footer">
     A decision aid, not a verdict. These are heuristics — a low score doesn't
-    guarantee an email is safe.
+    guarantee a file is genuine.
   </div>
 
   <script src="detector.js"></script>
+  <script src="docdetector.js"></script>
+  <script src="pdfparse.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

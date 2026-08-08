@@ -6,3 +6,5 @@ test_invoice.pdf
 .DS_Store
 .env
 *.env
+
+pdf_fixtures.json

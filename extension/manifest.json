@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Phishing Signal Scanner",
+  "name": "Fraud & Phishing Scanner",
   "version": "1.0.0",
-  "description": "Checks the email you're reading for phishing signals. Runs entirely in your browser — nothing is uploaded.",
+  "description": "Checks emails for phishing signals and PDFs for document fraud. Runs entirely in your browser — nothing is uploaded.",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["https://mail.google.com/*"],
   "icons": {
@@ -12,7 +12,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Scan this email for phishing signals",
+    "default_title": "Scan this email or a document",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
