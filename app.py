@@ -953,6 +953,75 @@ def _email_check_ui(st):
                "links or reply. Verify with the sender through a known channel.")
 
 
+def build_extension_zip():
+    """Zip the Chrome extension folder in memory. Returns bytes, or None if the
+    folder isn't present (e.g. a deployment that only shipped app.py)."""
+    import os
+    import zipfile
+
+    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extension")
+    if not os.path.isdir(root):
+        return None
+
+    skip_dirs = {"test", "__pycache__", ".git"}
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+            for name in filenames:
+                if name.endswith((".pyc", ".json.bak")):
+                    continue
+                full = os.path.join(dirpath, name)
+                arc = os.path.join("extension",
+                                   os.path.relpath(full, root))
+                zf.write(full, arc)
+    return buf.getvalue()
+
+
+def _extension_ui(st):
+    st.subheader("Run these checks locally, in your browser")
+    st.write(
+        "The same detection logic is available as a Chrome extension. It checks "
+        "the email you're reading in Gmail, and scans PDFs for the same "
+        "inconsistencies this page looks for."
+    )
+    st.info(
+        "**Nothing is uploaded.** The extension makes no network calls at all — "
+        "the detector is ported to JavaScript and runs inside your browser. "
+        "For a tool that reads your email and your invoices, that seemed like "
+        "the right trade."
+    )
+
+    data = build_extension_zip()
+    if data:
+        st.download_button(
+            "⬇️  Download the extension (.zip)",
+            data=data,
+            file_name="fraud-phishing-scanner-extension.zip",
+            mime="application/zip",
+            use_container_width=True,
+        )
+    else:
+        st.warning("The extension files aren't available on this deployment. "
+                   "Grab them from GitHub instead.")
+
+    st.markdown(
+        "**To install it** (Chrome doesn't allow one-click installs outside the "
+        "Web Store, so this takes four steps):\n\n"
+        "1. Unzip the download\n"
+        "2. Open `chrome://extensions` and switch on **Developer mode**, top right\n"
+        "3. Click **Load unpacked** and choose the unzipped `extension` folder\n"
+        "4. Click the puzzle-piece icon in the toolbar and **pin** the scanner\n\n"
+        "Source: [github.com/jonathand2028/business_scanner]"
+        "(https://github.com/jonathand2028/business_scanner/tree/main/extension)"
+    )
+    st.caption(
+        "Because the rules now exist in both Python and JavaScript, a test in "
+        "CI checks the two produce identical scores and findings across 34 "
+        "labeled cases, so the versions can't quietly drift apart."
+    )
+
+
 def main():
     import streamlit as st
 
@@ -961,11 +1030,14 @@ def main():
     st.markdown(THEME_CSS, unsafe_allow_html=True)
     st.markdown(HERO_HTML, unsafe_allow_html=True)
 
-    doc_tab, email_tab = st.tabs(["📄 Document scan", "📧 Email check"])
+    doc_tab, email_tab, ext_tab = st.tabs(
+        ["📄 Document scan", "📧 Email check", "🧩 Browser extension"])
     with doc_tab:
         _document_scan_ui(st)
     with email_tab:
         _email_check_ui(st)
+    with ext_tab:
+        _extension_ui(st)
 
     st.markdown(
         '<div class="app-foot">Cross-Modal Inconsistency Scanner · '
