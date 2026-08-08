@@ -83,9 +83,54 @@ let failures = 0;
     problems.forEach((p) => console.log(`        ${p}`));
   }
 
+  // ---------------- JPEG EXIF ----------------
+  const jpegPath = path.join(__dirname, "jpeg_fixtures.json");
+  let jpegCount = 0;
+  if (fs.existsSync(jpegPath)) {
+    const { extractJpegExif } = require("../pdfparse.js");
+    const jpegs = JSON.parse(fs.readFileSync(jpegPath, "utf8"));
+    jpegCount = jpegs.length;
+
+    console.log("\nJPEG EXIF reader vs. Pillow");
+    console.log("=".repeat(66));
+
+    for (const fx of jpegs) {
+      const bytes = new Uint8Array(Buffer.from(fx.b64, "base64"));
+      const meta = extractJpegExif(bytes);
+      const problems = [];
+
+      for (const key of ["creation_date", "mod_date", "software"]) {
+        const got = meta[key] || null;
+        const want = fx.python_metadata[key] || null;
+        if (got !== want) problems.push(`${key}: js "${got}" != python "${want}"`);
+      }
+      if (meta.has_metadata !== fx.python_metadata.has_metadata) {
+        problems.push("has_metadata differs");
+      }
+
+      // No OCR in the browser, so the text is empty on both sides here.
+      const r = evaluateDocument("", meta, [], true);
+      const band = documentRiskBand(r.score).band;
+      if (r.score !== fx.python_score) {
+        problems.push(`score: js ${r.score} != python ${fx.python_score}`);
+      }
+      if (band !== fx.python_band) {
+        problems.push(`band: js ${band} != python ${fx.python_band}`);
+      }
+
+      const ok = problems.length === 0;
+      if (!ok) failures += 1;
+      console.log(`  ${ok ? "ok  " : "FAIL"}  ${fx.name.padEnd(20)} `
+        + `score ${String(r.score).padStart(3)}  ${band}  `
+        + `software=${meta.software || "—"}`);
+      problems.forEach((p) => console.log(`        ${p}`));
+    }
+  }
+
+  const total = fixtures.length + jpegCount;
   console.log("=".repeat(66));
   console.log(failures === 0
-    ? `${fixtures.length}/${fixtures.length} PDFs parsed consistently with pypdf.`
-    : `${failures} of ${fixtures.length} failed.`);
+    ? `${total}/${total} files parsed consistently with the Python readers.`
+    : `${failures} of ${total} failed.`);
   process.exit(failures ? 1 : 0);
 })();

@@ -8,3 +8,5 @@ test_invoice.pdf
 *.env
 
 pdf_fixtures.json
+
+jpeg_fixtures.json

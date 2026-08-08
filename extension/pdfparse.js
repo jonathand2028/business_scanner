@@ -237,24 +237,111 @@ async function extractText(bytes) {
   return chunks.join("\n").trim();
 }
 
-/** Minimal JPEG EXIF read for Software and DateTime. */
+/**
+ * JPEG EXIF reader — walks the TIFF IFD structure properly rather than
+ * pattern-matching the raw bytes.
+ *
+ * This matters for photographed receipts and IDs. The tags that give away an
+ * edited image are Software (0x0131) and the three DateTime fields, and a
+ * regex over the file finds them only by luck: it can't tell a real Software
+ * tag from the same words appearing in a comment or a colour profile, and it
+ * can't tell which of several timestamps is which.
+ *
+ * EXIF tags read:
+ *   0x0132 DateTime          — last modification (matches pypdf/Pillow's DateTime)
+ *   0x9003 DateTimeOriginal  — when the photo was taken
+ *   0x0131 Software          — the editor that last wrote the file
+ */
+const EXIF_TAGS = { 0x0132: "datetime", 0x9003: "datetime_original",
+                    0x0131: "software" };
+
+function readExifIfd(view, tiffStart, ifdOffset, little, out, depth = 0) {
+  if (depth > 2) return;
+  const base = tiffStart + ifdOffset;
+  if (base + 2 > view.byteLength) return;
+  const count = view.getUint16(base, little);
+
+  for (let i = 0; i < count; i++) {
+    const entry = base + 2 + i * 12;
+    if (entry + 12 > view.byteLength) return;
+
+    const tag = view.getUint16(entry, little);
+    const type = view.getUint16(entry + 2, little);
+    const num = view.getUint32(entry + 4, little);
+
+    // 0x8769 is the pointer to the EXIF sub-IFD, where DateTimeOriginal lives.
+    if (tag === 0x8769) {
+      readExifIfd(view, tiffStart, view.getUint32(entry + 8, little),
+                  little, out, depth + 1);
+      continue;
+    }
+
+    const name = EXIF_TAGS[tag];
+    if (!name || type !== 2) continue; // type 2 = ASCII
+
+    let valueOffset = entry + 8;
+    if (num > 4) valueOffset = tiffStart + view.getUint32(entry + 8, little);
+    if (valueOffset + num > view.byteLength) continue;
+
+    let s = "";
+    for (let j = 0; j < num; j++) {
+      const c = view.getUint8(valueOffset + j);
+      if (c === 0) break;
+      s += String.fromCharCode(c);
+    }
+    s = s.trim();
+    if (s) out[name] = s;
+  }
+}
+
 function extractJpegExif(bytes) {
   const meta = { creation_date: null, mod_date: null, software: null,
                  has_metadata: false };
   if (!(bytes[0] === 0xFF && bytes[1] === 0xD8)) return meta;
 
-  const s = bytesToLatin1(bytes.subarray(0, Math.min(bytes.length, 200000)));
-  // EXIF DateTime fields look like 2026:06:10 15:30:00 in plain ASCII.
-  const dt = s.match(/\b(\d{4}):(\d{2}):(\d{2})\s\d{2}:\d{2}:\d{2}\b/);
-  if (dt) {
-    meta.creation_date = dt[0];
-    meta.has_metadata = true;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 2;
+  let found = null;
+
+  // Walk JPEG markers looking for APP1 with an "Exif\0\0" header.
+  while (offset + 4 <= bytes.length) {
+    if (view.getUint8(offset) !== 0xFF) break;
+    const marker = view.getUint8(offset + 1);
+    if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) {
+      offset += 2; continue;
+    }
+    if (marker === 0xDA || marker === 0xD9) break; // start of scan / end
+    const size = view.getUint16(offset + 2, false);
+    if (marker === 0xE1) {
+      const hdr = bytesToLatin1(bytes.subarray(offset + 4, offset + 10));
+      if (hdr.startsWith("Exif")) { found = offset + 10; break; }
+    }
+    offset += 2 + size;
   }
-  const sw = s.match(/(Adobe Photoshop[^\0]{0,30}|GIMP[^\0]{0,20}|Canva|Pixelmator[^\0]{0,15}|Affinity[^\0]{0,20}|Snapseed|Lightroom[^\0]{0,20})/i);
-  if (sw) {
-    meta.software = sw[1].trim();
-    meta.has_metadata = true;
+
+  if (found === null) return meta;
+
+  // TIFF header: "II" little-endian or "MM" big-endian, then 0x2A.
+  const byteOrder = bytesToLatin1(bytes.subarray(found, found + 2));
+  const little = byteOrder === "II";
+  if (!little && byteOrder !== "MM") return meta;
+  if (view.getUint16(found + 2, little) !== 0x2A) return meta;
+
+  const out = {};
+  try {
+    readExifIfd(view, found, view.getUint32(found + 4, little), little, out);
+  } catch {
+    return meta;
   }
+
+  if (out.software) meta.software = out.software;
+  // DateTimeOriginal is when the shutter fired; DateTime is the last write.
+  if (out.datetime_original) meta.creation_date = out.datetime_original;
+  if (out.datetime) {
+    meta.mod_date = out.datetime;
+    if (!meta.creation_date) meta.creation_date = out.datetime;
+  }
+  meta.has_metadata = Boolean(meta.software || meta.creation_date || meta.mod_date);
   return meta;
 }
 
@@ -309,5 +396,6 @@ async function readFile(file) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { readFile, extractMetadata, extractText, decodePdfString,
-                     textFromContentStream, isPdf, ascii85Decode };
+                     textFromContentStream, isPdf, ascii85Decode,
+                     extractJpegExif };
 }

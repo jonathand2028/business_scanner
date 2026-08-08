@@ -42,6 +42,14 @@ EDITOR_SOFTWARE = [
 # we consider worth flagging.
 DATE_GAP_DAYS = 30
 
+# Image container fields that exist in every file of that format and therefore
+# carry no information about where the file came from.
+_CONTAINER_INFO_KEYS = {
+    "jfif", "jfif_version", "jfif_unit", "jfif_density", "dpi",
+    "adobe", "adobe_transform", "progression", "progressive",
+    "icc_profile", "exif", "gamma", "srgb", "interlace", "compression",
+}
+
 # Month names for parsing things like "Invoice Date: January 2026"
 _MONTHS = {
     "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
@@ -433,12 +441,25 @@ def extract_from_image(file_bytes):
         raw = img.getexif()
         for tag_id, value in raw.items():
             exif_raw[TAGS.get(tag_id, str(tag_id))] = value
+        # getexif() returns only IFD0. DateTimeOriginal - when the shutter
+        # actually fired - lives in the EXIF sub-IFD (0x8769), so without this
+        # every photo's "created" date was really its last-modified date, and
+        # an image edited months after it was taken looked internally consistent.
+        try:
+            for tag_id, value in raw.get_ifd(0x8769).items():
+                exif_raw.setdefault(TAGS.get(tag_id, str(tag_id)), value)
+        except Exception:
+            pass
     except Exception:
         pass
 
     # PNGs and AI tools sometimes stash data in img.info instead of EXIF.
+    # Container-level fields (JFIF version, density, colour profile) say nothing
+    # about a file's origin; counting them as metadata meant the
+    # "metadata stripped" check could never fire on a JPEG.
     info = {k: v for k, v in (img.info or {}).items()
-            if isinstance(v, (str, int, float))}
+            if isinstance(v, (str, int, float))
+            and k.lower() not in _CONTAINER_INFO_KEYS}
 
     software = exif_raw.get("Software") or info.get("Software")
     create = exif_raw.get("DateTimeOriginal") or exif_raw.get("DateTime")
