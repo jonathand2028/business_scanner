@@ -10,6 +10,46 @@
  * scores it locally.
  */
 
+const PROVIDER = /mail\.google\.com$/.test(location.hostname) ? "gmail" : "outlook";
+
+/**
+ * Selectors per provider. Both webmail clients use obfuscated, generated class
+ * names that change without notice, so each field lists several candidates and
+ * degrades to the paste box rather than throwing.
+ */
+const SEL = {
+  gmail: {
+    subject: ["h2.hP", "h2[data-thread-perm-id]", "[role='heading'] h2"],
+    senderAttr: ["span.gD[email]", "span[email]", ".go span[email]"],
+    senderText: [".gE.iv.gt", ".iw", ".gE"],
+    body: ["div.a3s", "div[data-message-id] div.ii"],
+    bodyFallback: ["div[role='listitem']:last-of-type", "div.ii"],
+    linkScope: "div.a3s",
+  },
+  outlook: {
+    subject: [
+      "div[role='heading'][aria-level='2']",
+      "span[class*='subjectLine']",
+      "div[aria-label='Message subject']",
+      "h1[role='heading']",
+    ],
+    senderAttr: [],
+    senderText: [
+      "span[class*='SenderPersona']",
+      "div[aria-label*='From']",
+      "span[title*='@']",
+      "div[role='heading'] + div",
+    ],
+    body: [
+      "div[aria-label='Message body']",
+      "div.allowTextSelection",
+      "div[role='document']",
+    ],
+    bodyFallback: ["div[class*='ReadingPane']", "div[role='main']"],
+    linkScope: "div[aria-label='Message body']",
+  },
+}[PROVIDER];
+
 function firstMatch(selectors) {
   for (const sel of selectors) {
     const el = document.querySelector(sel);
@@ -19,39 +59,39 @@ function firstMatch(selectors) {
 }
 
 function extractSubject() {
-  const el = firstMatch(["h2.hP", "h2[data-thread-perm-id]", "[role='heading'] h2"]);
-  return el ? el.innerText.trim() : "";
+  const el = firstMatch(SEL.subject);
+  return el ? el.innerText.trim().slice(0, 300) : "";
 }
 
 function extractSender() {
-  // Gmail puts the address in an `email` attribute on the sender span.
-  const el = firstMatch(["span.gD[email]", "span[email]", ".go span[email]"]);
-  if (el) {
-    const addr = el.getAttribute("email");
+  // Gmail exposes the address in an `email` attribute; Outlook doesn't.
+  for (const sel of SEL.senderAttr) {
+    const el = document.querySelector(sel);
+    const addr = el && el.getAttribute("email");
     if (addr) return addr.trim();
   }
-  // Fall back to scraping an address out of the header text.
-  const header = firstMatch([".gE.iv.gt", ".iw", ".gE"]);
+  // Otherwise scrape an address out of the header area.
+  const header = firstMatch(SEL.senderText);
   if (header) {
-    const m = header.innerText.match(/[\w.+-]+@[\w.-]+\.\w+/);
+    const m = (header.getAttribute("title") || header.innerText || "")
+      .match(/[\w.+-]+@[\w.-]+\.\w+/);
     if (m) return m[0];
   }
   return "";
 }
 
 function extractBody() {
-  // .a3s is the long-standing message-body container. Take the last one so a
-  // reply thread yields the message actually on screen.
-  const bodies = document.querySelectorAll("div.a3s, div[data-message-id] div.ii");
+  // Take the last match so a reply thread yields the message on screen.
+  const bodies = document.querySelectorAll(SEL.body.join(", "));
   if (bodies.length) return bodies[bodies.length - 1].innerText.trim();
-  const fallback = firstMatch(["div[role='listitem']:last-of-type", "div.ii"]);
+  const fallback = firstMatch(SEL.bodyFallback);
   return fallback ? fallback.innerText.trim() : "";
 }
 
-/** Links are read from href attributes, since Gmail often hides the real
- *  destination behind display text. The detector needs the real URLs. */
+/** Links are read from href attributes, since webmail routinely hides the real
+ *  destination behind display text. The detector needs the actual URLs. */
 function extractLinks() {
-  const scope = document.querySelector("div.a3s") || document;
+  const scope = document.querySelector(SEL.linkScope) || document;
   return [...scope.querySelectorAll("a[href^='http']")]
     .map((a) => a.getAttribute("href"))
     .filter(Boolean)

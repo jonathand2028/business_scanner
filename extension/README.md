@@ -2,7 +2,8 @@
 
 A local version of the web app. Two tabs:
 
-- **Email** — checks the message you're reading in Gmail for phishing signals.
+- **Email** — checks the message you're reading in Gmail or Outlook Web for
+  phishing signals, automatically.
 - **Document** — reads a PDF and cross-checks its printed dates against the
   file's own hidden metadata, the same way the web app does.
 
@@ -23,13 +24,17 @@ that reads your email has no business uploading it.
 
 ## Using it
 
-**Email scanning is automatic.** Open a message in Gmail and the extension
+**Email scanning is automatic.** Open a message in Gmail or Outlook Web and
+the extension
 scores it immediately, showing the risk number as a coloured badge on the
 toolbar icon — green for low, orange for medium, red for high. You only click
 the icon if you want to see *why*.
 
-A `MutationObserver` watches for the page changing, since Gmail is a
-single-page app and opening a message never reloads anything. Scans are
+A `MutationObserver` watches for the page changing, since both clients are
+single-page apps and opening a message never reloads anything. Selectors are
+kept per-provider and each field tries several candidates, because both
+clients use generated class names that change without notice. Outlook support
+is best-effort for that reason; the paste box is the fallback. Scans are
 debounced and keyed to the message, so switching between emails rescans but
 re-rendering the same one doesn't.
 
@@ -103,7 +108,7 @@ is not a guarantee that an email is safe.
 
 | File | Role |
 |---|---|
-| `manifest.json` | Manifest V3 config. Permissions are limited to `activeTab`, `scripting`, and `mail.google.com`. |
+| `manifest.json` | Manifest V3 config. Host access limited to Gmail and Outlook Web. |
 | `detector.js` | Phishing detection logic. Pure functions, no DOM or network access. |
 | `docdetector.js` | Document fraud logic — port of `evaluate()`, `find_dates()`, `parse_metadata_date()`. |
 | `pdfparse.js` | Reads PDF metadata and text from raw bytes. No external library. |

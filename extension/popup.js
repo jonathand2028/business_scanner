@@ -13,6 +13,33 @@ const $ = (id) => document.getElementById(id);
 const show = (id) => $(id).classList.remove("hidden");
 const hide = (id) => $(id).classList.add("hidden");
 
+const SUPPORTED_MAIL =
+  /^https:\/\/(mail\.google\.com|outlook\.(office|office365|live)\.com)\//;
+
+/** Never let a hung message keep the popup showing a spinner. */
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+}
+
+/** pdfparse.js is only needed if the Document tab gets used, so it's loaded on
+ *  demand rather than parsed every time the popup opens. */
+let pdfLoader = null;
+function loadPdfParser() {
+  if (!pdfLoader) {
+    pdfLoader = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "pdfparse.js";
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  return pdfLoader;
+}
+
 // ----------------------------------------------------------------- tabs
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -113,17 +140,19 @@ async function scanOpenEmail({ silent = false } = {}) {
     openManual("Couldn't read the current tab. Paste the email instead.");
     return;
   }
-  if (!tab || !/^https:\/\/mail\.google\.com\//.test(tab.url || "")) {
-    openManual("You're not on Gmail. Paste an email below to scan it.");
+  if (!tab || !SUPPORTED_MAIL.test(tab.url || "")) {
+    openManual("This isn't a supported mail page. Paste an email below to "
+      + "scan it, or use the Document tab.");
     return;
   }
 
   // The content script already scored this message when it opened, so reuse
-  // that rather than doing the same work twice.
+  // that rather than doing the same work twice. Bounded, because an idle MV3
+  // service worker has to cold start and that can take a moment.
   try {
-    const cached = await chrome.runtime.sendMessage({
-      type: "GET_LAST_RESULT", tabId: tab.id,
-    });
+    const cached = await withTimeout(
+      chrome.runtime.sendMessage({ type: "GET_LAST_RESULT", tabId: tab.id }),
+      500);
     if (cached && cached.findings) {
       render({ findings: cached.findings, score: cached.score },
              { sender: cached.sender, subject: cached.subject });
@@ -215,6 +244,7 @@ async function scanFile(file) {
   hide("doc-result");
   docStatus(`Reading ${file.name}…`);
   try {
+    await loadPdfParser();
     const parsed = await readFile(file);
     if (parsed.kind === "unknown") { docStatus(parsed.note, "warn"); return; }
     const result = evaluateDocument(parsed.text, parsed.metadata,
