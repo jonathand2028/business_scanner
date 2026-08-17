@@ -118,6 +118,21 @@ async function scanOpenEmail({ silent = false } = {}) {
     return;
   }
 
+  // The content script already scored this message when it opened, so reuse
+  // that rather than doing the same work twice.
+  try {
+    const cached = await chrome.runtime.sendMessage({
+      type: "GET_LAST_RESULT", tabId: tab.id,
+    });
+    if (cached && cached.findings) {
+      render({ findings: cached.findings, score: cached.score },
+             { sender: cached.sender, subject: cached.subject });
+      return;
+    }
+  } catch {
+    // fall through and scan directly
+  }
+
   let data;
   try {
     data = await chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_EMAIL" });

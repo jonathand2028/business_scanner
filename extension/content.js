@@ -87,3 +87,70 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   return true;
 });
+
+// ----------------------------------------------------------------------
+// Auto-scan
+//
+// Gmail is a single-page app, so opening a message doesn't reload anything.
+// A MutationObserver watches for the DOM changing and re-checks what's on
+// screen, debounced so it isn't recomputing on every keystroke.
+//
+// Scoring happens here, in the page. Only the resulting number and band go to
+// the service worker, which turns them into a toolbar badge. The email text
+// never leaves this script.
+// ----------------------------------------------------------------------
+
+let lastScannedKey = null;
+let scanTimer = null;
+
+/** Identifies the open message so we don't rescan the same one repeatedly. */
+function messageKey(data) {
+  return (data.subject || "") + "|" + (data.sender || "")
+    + "|" + (data.body || "").slice(0, 200);
+}
+
+function autoScan() {
+  let data;
+  try {
+    data = extractEmail();
+  } catch {
+    return;
+  }
+
+  if (!data.ok || !(data.text || "").trim()) {
+    if (lastScannedKey !== null) {
+      lastScannedKey = null;
+      chrome.runtime.sendMessage({ type: "AUTO_SCAN_CLEARED" }, () => void chrome.runtime.lastError);
+    }
+    return;
+  }
+
+  const key = messageKey(data);
+  if (key === lastScannedKey) return;
+  lastScannedKey = key;
+
+  const { findings, score } = checkEmail(data.text, data.sender);
+  const { band, note } = riskBand(score);
+
+  chrome.runtime.sendMessage({
+    type: "AUTO_SCAN_RESULT",
+    result: {
+      score, band, note, findings,
+      subject: data.subject,
+      sender: data.sender,
+    },
+  }, () => void chrome.runtime.lastError);
+}
+
+function scheduleScan() {
+  clearTimeout(scanTimer);
+  scanTimer = setTimeout(autoScan, 400);
+}
+
+const observer = new MutationObserver(scheduleScan);
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Gmail uses hash routing, so catch navigation between messages too.
+window.addEventListener("hashchange", scheduleScan);
+
+scheduleScan();

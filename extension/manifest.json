@@ -1,15 +1,18 @@
 {
   "manifest_version": 3,
   "name": "Fraud & Phishing Scanner",
-  "version": "1.0.0",
-  "description": "Checks emails for phishing signals and PDFs for document fraud. Runs entirely in your browser — nothing is uploaded.",
-  "permissions": ["activeTab", "scripting"],
+  "version": "1.1.0",
+  "description": "Automatically checks the email you're reading for phishing signals, and scans PDFs for document fraud. Runs entirely in your browser — nothing is uploaded.",
+  "permissions": ["activeTab", "scripting", "contextMenus"],
   "host_permissions": ["https://mail.google.com/*"],
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "action": {
     "default_title": "Scan this email or a document",
@@ -24,8 +27,14 @@
   "content_scripts": [
     {
       "matches": ["https://mail.google.com/*"],
-      "js": ["content.js"],
+      "js": ["detector.js", "content.js"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["detector.js", "toast.js"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

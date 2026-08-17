@@ -23,15 +23,31 @@ that reads your email has no business uploading it.
 
 ## Using it
 
-Open an email in Gmail and click the coral shield icon. **It scans
-automatically when the popup opens** — no button press needed.
+**Email scanning is automatic.** Open a message in Gmail and the extension
+scores it immediately, showing the risk number as a coloured badge on the
+toolbar icon — green for low, orange for medium, red for high. You only click
+the icon if you want to see *why*.
 
-- **Scan again** re-reads the page after you switch messages.
+A `MutationObserver` watches for the page changing, since Gmail is a
+single-page app and opening a message never reloads anything. Scans are
+debounced and keyed to the message, so switching between emails rescans but
+re-rendering the same one doesn't.
+
+- **Scan again** re-reads the page manually.
 - **Paste an email instead** works anywhere, and is the fallback if Gmail's
   layout changes. ⌘/Ctrl + Enter scans.
+- **Right-click any selected text** on any site and choose *Scan selected text
+  for phishing signals*. The result appears in a small panel on the page.
 
-Note that the extension does not alter the Gmail page itself. Everything
-appears in the popup.
+Note that the extension does not otherwise alter the Gmail page. Details
+appear in the popup.
+
+### Why there's no Google Docs support
+
+Docs renders its text to a `<canvas>` rather than into the DOM, so an
+extension can't read a document reliably. Rather than ship something that
+works intermittently and silently misses content, the right-click selection
+scan covers that case and works on every site instead of one.
 
 Links are read from `href` attributes rather than the visible link text, so the
 detector sees the real destination even when the display text hides it.
@@ -91,7 +107,9 @@ is not a guarantee that an email is safe.
 | `detector.js` | Phishing detection logic. Pure functions, no DOM or network access. |
 | `docdetector.js` | Document fraud logic — port of `evaluate()`, `find_dates()`, `parse_metadata_date()`. |
 | `pdfparse.js` | Reads PDF metadata and text from raw bytes. No external library. |
-| `content.js` | Pulls subject, sender, body, and link hrefs out of the Gmail page. |
+| `content.js` | Pulls subject, sender, body, and link hrefs out of the Gmail page, and auto-scans on message open. |
+| `background.js` | Service worker. Owns the toolbar badge and the right-click menu. |
+| `toast.js` | The in-page result panel used by the right-click scan. |
 | `popup.html` / `popup.js` | UI and rendering. |
 | `test/` | Cross-language parity test. |
 
@@ -142,11 +160,16 @@ print('regenerated', len(cases), 'cases')
 
 ## Privacy
 
-- No network requests.
-- No storage — nothing is written to disk or to `chrome.storage`.
-- Host permission is restricted to `https://mail.google.com/*`.
-- Email content is read into memory, scored, displayed, and discarded when the
-  popup closes.
+- No network requests anywhere in the extension.
+- No storage — nothing is written to disk or to `chrome.storage`. Auto-scan
+  results are held in a `Map` in the service worker and disappear when the tab
+  closes or the worker restarts.
+- Host permission is restricted to `https://mail.google.com/*`. The
+  right-click scan uses `activeTab`, so it only ever runs on a page after you
+  explicitly ask it to.
+- Email content is scored inside the page. Only the resulting score, band, and
+  findings are passed to the service worker for the badge — the message body
+  never leaves the content script.
 
 ## Known limitations
 
