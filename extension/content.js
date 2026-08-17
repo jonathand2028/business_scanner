@@ -131,22 +131,38 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 // ----------------------------------------------------------------------
 // Auto-scan
 //
-// Gmail is a single-page app, so opening a message doesn't reload anything.
-// A MutationObserver watches for the DOM changing and re-checks what's on
-// screen, debounced so it isn't recomputing on every keystroke.
+// Gmail and Outlook are single-page apps, so opening a message never reloads
+// anything. A cheap polled signature check detects when the open message
+// changes; the expensive extraction only runs when it has.
 //
 // Scoring happens here, in the page. Only the resulting number and band go to
 // the service worker, which turns them into a toolbar badge. The email text
 // never leaves this script.
 // ----------------------------------------------------------------------
 
-let lastScannedKey = null;
-let scanTimer = null;
+let lastSignature = null;
 
-/** Identifies the open message so we don't rescan the same one repeatedly. */
-function messageKey(data) {
-  return (data.subject || "") + "|" + (data.sender || "")
-    + "|" + (data.body || "").slice(0, 200);
+/**
+ * Cheap change check.
+ *
+ * The first version of this used a MutationObserver on document.body. That was
+ * a mistake: Gmail and Outlook fire thousands of mutations a second, and the
+ * extraction path uses innerText, which forces a layout reflow. The result was
+ * a visibly sluggish page.
+ *
+ * This instead polls a signature built from textContent and the URL. Unlike
+ * innerText, textContent doesn't trigger reflow, so the check costs almost
+ * nothing, and the expensive extraction only runs when something actually
+ * changed.
+ */
+function signature() {
+  const subj = document.querySelector(SEL.subject.join(", "));
+  const body = document.querySelector(SEL.body.join(", "));
+  return [
+    location.href,
+    subj ? subj.textContent.slice(0, 120) : "",
+    body ? body.textContent.length : 0,
+  ].join("|");
 }
 
 function autoScan() {
@@ -158,16 +174,10 @@ function autoScan() {
   }
 
   if (!data.ok || !(data.text || "").trim()) {
-    if (lastScannedKey !== null) {
-      lastScannedKey = null;
-      chrome.runtime.sendMessage({ type: "AUTO_SCAN_CLEARED" }, () => void chrome.runtime.lastError);
-    }
+    chrome.runtime.sendMessage({ type: "AUTO_SCAN_CLEARED" },
+                               () => void chrome.runtime.lastError);
     return;
   }
-
-  const key = messageKey(data);
-  if (key === lastScannedKey) return;
-  lastScannedKey = key;
 
   const { findings, score } = checkEmail(data.text, data.sender);
   const { band, note } = riskBand(score);
@@ -182,15 +192,26 @@ function autoScan() {
   }, () => void chrome.runtime.lastError);
 }
 
-function scheduleScan() {
-  clearTimeout(scanTimer);
-  scanTimer = setTimeout(autoScan, 400);
+function tick() {
+  if (document.hidden) return;          // don't work in a background tab
+  let sig;
+  try {
+    sig = signature();
+  } catch {
+    return;
+  }
+  if (sig === lastSignature) return;
+  lastSignature = sig;
+  autoScan();
 }
 
-const observer = new MutationObserver(scheduleScan);
-observer.observe(document.body, { childList: true, subtree: true });
+setInterval(tick, 1200);
 
-// Gmail uses hash routing, so catch navigation between messages too.
-window.addEventListener("hashchange", scheduleScan);
+// Both clients use hash routing, so react immediately when the URL changes
+// rather than waiting up to a second for the next tick.
+window.addEventListener("hashchange", () => setTimeout(tick, 250));
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) tick();
+});
 
-scheduleScan();
+setTimeout(tick, 800);

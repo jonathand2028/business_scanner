@@ -86,10 +86,27 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== "scan-selection" || !info.selectionText || !tab) return;
   try {
-    await chrome.scripting.executeScript({
+    // On Gmail and Outlook the detector is already present as a content
+    // script. Injecting it again would redeclare its constants and throw, so
+    // check first and only load what's missing.
+    const [probe] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      files: ["detector.js", "toast.js"],
+      func: () => ({
+        hasDetector: typeof checkEmail === "function",
+        hasToast: typeof window.__fraudScannerToast === "function",
+      }),
     });
+
+    const needed = [];
+    if (!probe.result.hasDetector) needed.push("detector.js");
+    if (!probe.result.hasToast) needed.push("toast.js");
+    if (needed.length) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: needed,
+      });
+    }
+
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: (text) => window.__fraudScannerToast(text),

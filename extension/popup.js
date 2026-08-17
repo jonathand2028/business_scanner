@@ -152,10 +152,10 @@ async function scanOpenEmail({ silent = false } = {}) {
   try {
     const cached = await withTimeout(
       chrome.runtime.sendMessage({ type: "GET_LAST_RESULT", tabId: tab.id }),
-      500);
+      300);
     if (cached && cached.findings) {
-      render({ findings: cached.findings, score: cached.score },
-             { sender: cached.sender, subject: cached.subject });
+      renderEmail({ findings: cached.findings, score: cached.score },
+                  { sender: cached.sender, subject: cached.subject });
       return;
     }
   } catch {
@@ -166,12 +166,12 @@ async function scanOpenEmail({ silent = false } = {}) {
   try {
     data = await chrome.tabs.sendMessage(tab.id, { type: "EXTRACT_EMAIL" });
   } catch {
-    openManual("Couldn't reach the Gmail page — reload the tab and try again, "
+    openManual("Couldn't reach the mail page — reload the tab and try again, "
       + "or paste the email below.");
     return;
   }
   if (!data || !data.ok || !(data.text || "").trim()) {
-    openManual("No open email found. Open a message in Gmail, or paste one below.");
+    openManual("No open email found. Open a message, or paste one below.");
     return;
   }
 
