@@ -24,7 +24,7 @@ const SEL = {
     senderText: [".gE.iv.gt", ".iw", ".gE"],
     body: ["div.a3s", "div[data-message-id] div.ii"],
     bodyFallback: ["div[role='listitem']:last-of-type", "div.ii"],
-    linkScope: "div.a3s",
+    container: "div[data-message-id], div[role='listitem'], .gs, .h7",
   },
   outlook: {
     subject: [
@@ -46,7 +46,7 @@ const SEL = {
       "div[role='document']",
     ],
     bodyFallback: ["div[class*='ReadingPane']", "div[role='main']"],
-    linkScope: "div[aria-label='Message body']",
+    container: "div[class*='ReadingPane'], div[role='main'], div[aria-label='Reading Pane']",
   },
 }[PROVIDER];
 
@@ -58,40 +58,67 @@ function firstMatch(selectors) {
   return null;
 }
 
+/** The body element of the message actually on screen (last, not first). */
+function bodyElement() {
+  const bodies = document.querySelectorAll(SEL.body.join(", "));
+  if (bodies.length) return bodies[bodies.length - 1];
+  return firstMatch(SEL.bodyFallback);
+}
+
+/**
+ * The container holding the open message.
+ *
+ * This matters more than it looks. Querying the document for a sender returns
+ * whichever address appears first in the DOM, which in Gmail is the top of the
+ * thread list rather than the message you opened — so every email reported the
+ * same sender while the score changed underneath it. Everything is now scoped
+ * to the container around the body element, so the sender always belongs to
+ * the message being scored.
+ */
+function messageContainer() {
+  const body = bodyElement();
+  if (!body) return null;
+  return body.closest(SEL.container) || body.parentElement || null;
+}
+
 function extractSubject() {
   const el = firstMatch(SEL.subject);
-  return el ? el.innerText.trim().slice(0, 300) : "";
+  return el ? el.textContent.trim().replace(/\s+/g, " ").slice(0, 300) : "";
 }
 
 function extractSender() {
+  const scope = messageContainer() || document;
+
   // Gmail exposes the address in an `email` attribute; Outlook doesn't.
   for (const sel of SEL.senderAttr) {
-    const el = document.querySelector(sel);
+    const el = scope.querySelector(sel);
     const addr = el && el.getAttribute("email");
     if (addr) return addr.trim();
   }
-  // Otherwise scrape an address out of the header area.
-  const header = firstMatch(SEL.senderText);
-  if (header) {
-    const m = (header.getAttribute("title") || header.innerText || "")
+
+  // Otherwise scrape an address out of the header area of this message.
+  for (const sel of SEL.senderText) {
+    const el = scope.querySelector(sel);
+    if (!el) continue;
+    const m = (el.getAttribute("title") || el.textContent || "")
       .match(/[\w.+-]+@[\w.-]+\.\w+/);
     if (m) return m[0];
   }
-  return "";
+
+  // Last resort: any address in the container that isn't the user's own.
+  const m = (scope.textContent || "").match(/[\w.+-]+@[\w.-]+\.\w+/);
+  return m ? m[0] : "";
 }
 
 function extractBody() {
-  // Take the last match so a reply thread yields the message on screen.
-  const bodies = document.querySelectorAll(SEL.body.join(", "));
-  if (bodies.length) return bodies[bodies.length - 1].innerText.trim();
-  const fallback = firstMatch(SEL.bodyFallback);
-  return fallback ? fallback.innerText.trim() : "";
+  const el = bodyElement();
+  return el ? el.innerText.trim() : "";
 }
 
 /** Links are read from href attributes, since webmail routinely hides the real
  *  destination behind display text. The detector needs the actual URLs. */
 function extractLinks() {
-  const scope = document.querySelector(SEL.linkScope) || document;
+  const scope = bodyElement() || document;
   return [...scope.querySelectorAll("a[href^='http']")]
     .map((a) => a.getAttribute("href"))
     .filter(Boolean)
@@ -181,15 +208,25 @@ function autoScan() {
 
   const { findings, score } = checkEmail(data.text, data.sender);
   const { band, note } = riskBand(score);
+  const result = {
+    score, band, note, findings,
+    subject: data.subject,
+    sender: data.sender,
+    key: lastSignature,
+  };
 
   chrome.runtime.sendMessage({
-    type: "AUTO_SCAN_RESULT",
-    result: {
-      score, band, note, findings,
-      subject: data.subject,
-      sender: data.sender,
-    },
+    type: "AUTO_SCAN_RESULT", result,
   }, () => void chrome.runtime.lastError);
+
+  // Show the reasons in the page when there's something worth flagging, so the
+  // common case needs no clicks. A clean email just gets a green badge —
+  // a panel on every message would be noise and get ignored.
+  if (band === "LOW") {
+    window.__fraudScannerHide && window.__fraudScannerHide();
+  } else if (window.__fraudScannerShow) {
+    window.__fraudScannerShow(result);
+  }
 }
 
 function tick() {

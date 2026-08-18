@@ -24,11 +24,21 @@ that reads your email has no business uploading it.
 
 ## Using it
 
-**Email scanning is automatic.** Open a message in Gmail or Outlook Web and
-the extension
-scores it immediately, showing the risk number as a coloured badge on the
-toolbar icon — green for low, orange for medium, red for high. You only click
-the icon if you want to see *why*.
+**Email scanning is automatic.** Open a message in Gmail or Outlook Web and the
+extension scores it immediately, showing the risk number as a coloured badge on
+the toolbar icon — green for low, orange for medium, red for high.
+
+**If anything is flagged, the reasons appear in the page automatically** in a
+small dismissable panel, so the common case takes no clicks at all. A clean
+email gets the green badge and nothing else: a panel on every message would be
+noise, and people learn to ignore anything that always fires.
+
+Everything is scoped to the message actually on screen. That sounds obvious but
+it wasn't at first — querying the document for a sender returns whichever
+address appears earliest in the DOM, which in Gmail is the top of the thread
+list, so every email reported the same sender while the score changed
+underneath it. Sender, body, and links are all now read from the container
+around the open message.
 
 A `MutationObserver` watches for the page changing, since both clients are
 single-page apps and opening a message never reloads anything. Selectors are

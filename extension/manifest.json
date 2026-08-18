@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Fraud & Phishing Scanner",
-  "version": "1.1.0",
-  "description": "Automatically checks the email you're reading for phishing signals, and scans PDFs for document fraud. Runs entirely in your browser — nothing is uploaded.",
-  "permissions": ["activeTab", "scripting", "contextMenus"],
+  "version": "1.2.0",
+  "description": "Automatically checks the email you're reading for phishing signals, and scans PDFs for document fraud. Runs entirely in your browser \u2014 nothing is uploaded.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "contextMenus"
+  ],
   "host_permissions": [
     "https://mail.google.com/*",
     "https://outlook.office.com/*",
@@ -37,14 +41,23 @@
         "https://outlook.office365.com/*",
         "https://outlook.live.com/*"
       ],
-      "js": ["detector.js", "content.js"],
+      "js": [
+        "detector.js",
+        "toast.js",
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["detector.js", "toast.js"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "detector.js",
+        "toast.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
