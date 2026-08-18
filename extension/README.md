@@ -186,6 +186,18 @@ print('regenerated', len(cases), 'cases')
   findings are passed to the service worker for the badge — the message body
   never leaves the content script.
 
+## Reloading the extension
+
+Reloading or updating an extension orphans any content script already running
+in an open tab: `chrome.runtime` stops working and every call throws
+`Extension context invalidated`. Because this script polls on a timer, an
+unguarded version would throw every 1.2 seconds until the page was reloaded.
+
+Every message is therefore guarded, and the first sign of invalidation shuts
+that instance down cleanly — the timer is cleared and the panel removed. The
+new content script takes over on the next page load. After reloading the
+extension you still need to refresh the mail tab to get the new version.
+
 ## Known limitations
 
 - Gmail's DOM selectors are unofficial and can break without notice. The paste

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Fraud & Phishing Scanner",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Automatically checks the email you're reading for phishing signals, and scans PDFs for document fraud. Runs entirely in your browser \u2014 nothing is uploaded.",
   "permissions": [
     "activeTab",

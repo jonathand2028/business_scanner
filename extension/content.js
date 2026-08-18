@@ -144,16 +144,20 @@ function extractEmail() {
   };
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg && msg.type === "EXTRACT_EMAIL") {
-    try {
-      sendResponse(extractEmail());
-    } catch (err) {
-      sendResponse({ ok: false, error: String(err) });
+try {
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg && msg.type === "EXTRACT_EMAIL") {
+      try {
+        sendResponse(extractEmail());
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err) });
+      }
     }
-  }
-  return true;
-});
+    return true;
+  });
+} catch {
+  // Orphaned content script from a previous version of the extension.
+}
 
 // ----------------------------------------------------------------------
 // Auto-scan
@@ -168,6 +172,44 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 // ----------------------------------------------------------------------
 
 let lastSignature = null;
+let pollTimer = null;
+
+/**
+ * Reloading or updating the extension orphans any content script already
+ * running in an open tab: chrome.runtime stops working and every call throws
+ * "Extension context invalidated". Since this script polls on a timer, that
+ * would otherwise throw every 1.2 seconds forever until the page is reloaded.
+ *
+ * So every message is guarded, and the first sign of invalidation shuts this
+ * instance down cleanly. The new content script takes over on next page load.
+ */
+function contextAlive() {
+  try {
+    return Boolean(chrome.runtime && chrome.runtime.id);
+  } catch {
+    return false;
+  }
+}
+
+function shutdown() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = null;
+  try {
+    if (window.__fraudScannerHide) window.__fraudScannerHide();
+  } catch { /* page may be tearing down */ }
+}
+
+function safeSend(message) {
+  if (!contextAlive()) {
+    shutdown();
+    return;
+  }
+  try {
+    chrome.runtime.sendMessage(message, () => void chrome.runtime.lastError);
+  } catch {
+    shutdown();
+  }
+}
 
 /**
  * Cheap change check.
@@ -201,8 +243,7 @@ function autoScan() {
   }
 
   if (!data.ok || !(data.text || "").trim()) {
-    chrome.runtime.sendMessage({ type: "AUTO_SCAN_CLEARED" },
-                               () => void chrome.runtime.lastError);
+    safeSend({ type: "AUTO_SCAN_CLEARED" });
     return;
   }
 
@@ -215,9 +256,7 @@ function autoScan() {
     key: lastSignature,
   };
 
-  chrome.runtime.sendMessage({
-    type: "AUTO_SCAN_RESULT", result,
-  }, () => void chrome.runtime.lastError);
+  safeSend({ type: "AUTO_SCAN_RESULT", result });
 
   // Show the reasons in the page when there's something worth flagging, so the
   // common case needs no clicks. A clean email just gets a green badge —
@@ -230,6 +269,7 @@ function autoScan() {
 }
 
 function tick() {
+  if (!contextAlive()) { shutdown(); return; }
   if (document.hidden) return;          // don't work in a background tab
   let sig;
   try {
@@ -242,7 +282,7 @@ function tick() {
   autoScan();
 }
 
-setInterval(tick, 1200);
+pollTimer = setInterval(tick, 1200);
 
 // Both clients use hash routing, so react immediately when the URL changes
 // rather than waiting up to a second for the next tick.
